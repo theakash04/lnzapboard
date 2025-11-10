@@ -223,15 +223,15 @@ function BoardDisplay() {
               )}
             </div>
 
-            {/* Right: Stats + QR */}
+            {/* Stats + QR */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Total Support */}
+              {/* Total Sats */}
               <div className="border-2 border-yellow-500 p-8 text-center bg-black">
                 <div className="text-yellow-400 text-sm uppercase tracking-wide mb-2">
-                  Total Support
+                  Total Sats 
                 </div>
-                <div className="text-6xl font-bold text-brightGreen mb-2">
-                  {totalSats.toLocaleString()}
+                <div className="text-6xl font-bold text-yellow-200 mb-2">
+                  {totalSats}
                 </div>
                 <div className="text-2xl text-yellow-400 mb-1">sats</div>
                 <div className="text-yellow-300 text-xl font-semibold">
