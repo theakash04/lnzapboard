@@ -55,7 +55,6 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
             relays: [
                 'wss://relay.damus.io',
                 'wss://nos.lol',
-                'wss://debugrelay.angor.online',
                 'wss://relay.snort.social',
             ],
         });

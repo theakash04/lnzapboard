@@ -5,7 +5,6 @@ import { parseZapReceipt } from './nip57';
 
 export const DEFAULT_RELAYS = [
     'wss://relay.damus.io',
-    "wss://debugrelay.angor.online",
     'wss://nos.lol',
     'wss://relay.snort.social',
 ];
