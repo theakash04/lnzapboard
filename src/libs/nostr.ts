@@ -136,6 +136,7 @@ export function subscribeToMessages(
                 try {
                     const amountTag = event.tags.find(t => t[0] === 'amount');
                     const senderTag = event.tags.find(t => t[0] === 'sender');
+                    const displayNameTag = event.tags.find(t => t[0] === 'displayName');
 
                     const message: ZapMessage = {
                         id: event.id,
@@ -143,6 +144,7 @@ export function subscribeToMessages(
                         content: event.content,
                         zapAmount: parseInt(amountTag?.[1] || '0', 10),
                         sender: senderTag?.[1],
+                        displayName: displayNameTag?.[1] || "Anonymous",
                         timestamp: event.created_at * 1000,
                     };
                     onMessage(message);
@@ -165,7 +167,8 @@ export async function publishMessage(
     content: string,
     zapAmount: number,
     sender: string | undefined,
-    privateKey: Uint8Array
+    privateKey: Uint8Array,
+    displayName?: string
 ): Promise<void> {
     const pool = getPool();
 
@@ -176,6 +179,7 @@ export async function publishMessage(
             ['e', boardId], // Use indexed 'e' tag
             ['amount', zapAmount.toString()],
             ...(sender ? [['sender', sender]] : []),
+            ...(displayName ? [["displayName",displayName]]: []),
         ],
         content,
     };
@@ -234,7 +238,8 @@ export function monitorZapReceipts(
                         zapInfo.message,
                         zapInfo.amount,
                         zapInfo.sender,
-                        privateKey
+                        privateKey,
+                        zapInfo.displayName
                     );
 
                     const message: ZapMessage = {

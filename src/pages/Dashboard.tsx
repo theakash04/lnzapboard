@@ -48,6 +48,7 @@ function Dashboard() {
     try {
       const nwc = await createNWCInstance(nwcStr);
       const info = await nwc.getInfo();
+      console.log(info)
 
       setNwcConnected(true);
       setShowNwcInput(false);

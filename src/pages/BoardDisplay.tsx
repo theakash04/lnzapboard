@@ -7,7 +7,6 @@ import {
   subscribeToMessages,
 } from "../libs/nostr";
 import type { BoardConfig, ZapMessage } from "../types";
-import RetroFrame from "../components/Frame";
 
 function BoardDisplay() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -114,7 +113,7 @@ function BoardDisplay() {
 
   if (loading) {
     return (
-        <div className="min-h-screen text-yellow-300 text-xl font-mono flex justify-center items-center">
+        <div className="min-h-screen bg-black text-yellow-300 text-xl font-mono flex justify-center items-center">
           Loading board...
         </div>
     );
@@ -157,15 +156,14 @@ function BoardDisplay() {
                   {leaderboard.map((msg, idx) => {
                     // Determine background color based on rank
                     let bgClass = "bg-yellow-800"; // default
-                    if (idx === 0) bgClass = "bg-red-400 text-black"; // top 1
+                    if (idx === 0) bgClass = "bg-yellow-500 text-black"; // top 1
                     else if (idx === 1)
-                      bgClass = "bg-blue-300 text-black"; // top 2
-                    else if (idx === 2) bgClass = "bg-green-300 text-black"; // top 3
-
+                      bgClass = "bg-yellow-200 text-black"; // top 2
+                    else if (idx === 2) bgClass = "bg-yellow-100 text-black"; // top 3
                     return (
                       <tr key={msg.id} className="border-t border-yellow-500 ">
                         <td className="py-1">{idx + 1}</td>
-                        <td>{msg.sender?.slice(0, 5) || "Anon"}</td>
+                        <td>{msg.displayName || "Anon"}</td>
                         <td>{msg.content}</td>
                         <td className={`${bgClass} font-bold text-center`}>
                           {msg.zapAmount.toLocaleString()}
@@ -205,7 +203,7 @@ function BoardDisplay() {
                           </span>
                         </div>
                         <span className="text-yellow-200 font-medium">
-                          {msg.sender?.slice(0, 5) || "Anon"}
+                          {msg.displayName || "Anonymous"}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">

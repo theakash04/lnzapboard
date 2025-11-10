@@ -13,6 +13,7 @@ export interface ZapMessage {
   content: string;
   zapAmount: number;
   sender?: string;
+  displayName?: string;
   timestamp: number;
 }
 

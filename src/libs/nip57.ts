@@ -2,7 +2,7 @@ import {
     makeZapRequest,
     validateZapRequest,
 } from 'nostr-tools/nip57';
-import { generateSecretKey, getPublicKey, finalizeEvent } from 'nostr-tools';
+import { generateSecretKey, finalizeEvent } from 'nostr-tools';
 import type { EventTemplate } from 'nostr-tools';
 
 interface GenerateInvoiceParams {
@@ -11,6 +11,7 @@ interface GenerateInvoiceParams {
     message: string;
     boardId: string;
     recipientPubkey: string;
+    displayName?: string;
 }
 
 // Generate a Lightning invoice with zap request
@@ -18,7 +19,7 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
     invoice: string;
     zapRequest: any;
 } | null> {
-    const { lightningAddress, amount, message, boardId, recipientPubkey } = params;
+    const { lightningAddress, amount, message, boardId, recipientPubkey, displayName } = params;
 
     try {
         // Parse Lightning address
@@ -29,7 +30,7 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
 
         // Generate ephemeral keypair for this zap
         const senderPrivkey = generateSecretKey();
-        const senderPubkey = getPublicKey(senderPrivkey);
+        // const senderPubkey = getPublicKey(senderPrivkey);
 
         // Fetch LNURL endpoint
         const lnurlUrl = `https://${domain}/.well-known/lnurlp/${username}`;
@@ -63,6 +64,10 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
 
         // Add custom board tag
         zapRequestTemplate.tags.push(['board', boardId]);
+
+        if (params.displayName) {
+            zapRequestTemplate.tags.push(['displayName', displayName!]);
+        }
 
         // Sign the zap request
         const signedZapRequest = finalizeEvent(zapRequestTemplate, senderPrivkey);
@@ -114,6 +119,7 @@ export function parseZapReceipt(zapReceipt: any): {
     message: string;
     sender?: string;
     boardId?: string;
+    displayName?: string;
 } | null {
     try {
         // Find the description tag (contains zap request)
@@ -132,6 +138,12 @@ export function parseZapReceipt(zapReceipt: any): {
         const boardTag = zapRequest.tags?.find((t: string[]) => t[0] === 'board');
         const boardId = boardTag?.[1];
 
+        // Extract displayName tag
+        const displayNameTag = zapRequest.tags?.find((t: string[]) => t[0] === 'displayName');
+        const displayName = displayNameTag?.[1] || "Anonymous";
+        console.log("parseZapReq> displayName:",displayName)
+
+
         // Extract amount from zap request
         const amountTag = zapRequest.tags?.find((t: string[]) => t[0] === 'amount');
         const amountMillisats = amountTag?.[1] ? parseInt(amountTag[1]) : 0;
@@ -142,6 +154,7 @@ export function parseZapReceipt(zapReceipt: any): {
             message,
             sender: zapRequest.pubkey,
             boardId,
+            displayName,
         };
     } catch (error) {
         console.error('Failed to parse zap receipt:', error);
