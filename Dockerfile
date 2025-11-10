@@ -1,13 +1,17 @@
-FROM node:22-alpine
+FROM node:22-alpine as build
 
 WORKDIR /app
 
 COPY package*.json ./
-
-RUN npm install
+RUN npm ci
 
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+FROM node:22-alpine
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+WORKDIR /app
+
+COPY --from=build /app/dist ./dist
+
+CMD cp -r /app/dist/* /app/dist-volume/ && tail -f /dev/null

@@ -1,12 +1,39 @@
-version: '3.8'
 
 services:
-  lnzapboard:
-    build: .
-    container_name: lnzapboard
-    ports:
-      - "5173:5173"
-    volumes:
-      - .:/app
-      - /app/node_modules
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lnzapboard_app
     restart: unless-stopped
+    volumes:
+      - app_data:/app/dist-volume
+    networks:
+      - app_network
+
+  caddy:
+    image: caddy:latest
+    container_name: lnzapboard_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - app_data:/srv
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - app_network
+
+volumes:
+  app_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  app_network:
+    driver: bridge
