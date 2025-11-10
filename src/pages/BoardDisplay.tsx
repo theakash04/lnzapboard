@@ -105,11 +105,11 @@ function BoardDisplay() {
     return `${Math.floor(seconds / 86400)} days ago`;
   };
 
-  const satsToUSD = (sats: number) => {
-    const btcPrice = 100_000;
-    const btc = sats / 100_000_000;
-    return (btc * btcPrice).toFixed(8);
-  };
+  // const satsToUSD = (sats: number) => {
+  //   const btcPrice = 100_000;
+  //   const btc = sats / 100_000_000;
+  //   return (btc * btcPrice).toFixed(8);
+  // };
 
   if (loading) {
     return (
@@ -234,9 +234,6 @@ function BoardDisplay() {
                   {totalSats}
                 </div>
                 <div className="text-2xl text-yellow-400 mb-1">sats</div>
-                <div className="text-yellow-300 text-xl font-semibold">
-                  ${satsToUSD(totalSats)}
-                </div>
               </div>
 
               {/* QR Code */}
