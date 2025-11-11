@@ -17,7 +17,7 @@ export default function Header() {
             className="w-10 h-10 object-contain group-hover:scale-110 transition-transform duration-200"
           />
           <span className="text-yellow-400 font-bold text-2xl tracking-wide group-hover:text-yellow-300 transition-colors">
-            lnzapboard
+           LN ZapBoard
           </span>
         </div>
 
