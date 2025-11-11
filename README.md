@@ -2,7 +2,7 @@
   <img src="./public/lnzapboard-logo.png" alt="LN ZapBoard" width="100"/>
 </p>
 
-<h1 align="center">⚡ LN ZapBoard</h1>
+<h1 align="center">LN ZapBoard</h1>
 
 <p align="center">
   Transform your Lightning payments into interactive message boards — built for freedom, powered by Bitcoin.
