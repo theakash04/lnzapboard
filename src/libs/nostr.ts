@@ -111,20 +111,18 @@ export async function fetchBoardConfig(
     });
 }
 
-/**
- * Subscribe to messages for a board
- * Uses #e tag for efficient relay-side filtering
- */
-export function subscribeToMessages(
+export function subscribeToZapMessages(
     boardId: string,
+    recipientPubkey: string,
     onMessage: (message: ZapMessage) => void
 ): () => void {
     const pool = getPool();
+    const seenIds = new Set<string>(); // Client-side deduplication
 
     const filter: Filter = {
-        kinds: [1337],
-        '#e': [boardId], // Indexed tag for relay filtering
-        since: Math.floor(Date.now() / 1000) - 86400,
+        kinds: [9735],
+        '#p': [recipientPubkey], // Zaps to the board creator
+        // No 'since' - load all historical zaps
     };
 
     const sub = pool.subscribeMany(
@@ -132,114 +130,22 @@ export function subscribeToMessages(
         filter,
         {
             onevent(event: Event) {
-                try {
-                    const amountTag = event.tags.find(t => t[0] === 'amount');
-                    const senderTag = event.tags.find(t => t[0] === 'sender');
-                    const displayNameTag = event.tags.find(t => t[0] === 'displayName');
-
-                    const message: ZapMessage = {
-                        id: event.id,
-                        boardId,
-                        content: event.content,
-                        zapAmount: parseInt(amountTag?.[1] || '0', 10),
-                        sender: senderTag?.[1],
-                        displayName: displayNameTag?.[1] || "Anonymous",
-                        timestamp: event.created_at * 1000,
-                    };
-                    onMessage(message);
-                } catch (err) {
-                    console.error('Failed to parse message:', err);
-                }
-            },
-        }
-    );
-
-    return () => sub.close();
-}
-
-/**
- * Publish a message event
- * Uses #e tag to reference the board
- */
-export async function publishMessage(
-    boardId: string,
-    content: string,
-    zapAmount: number,
-    sender: string | undefined,
-    privateKey: Uint8Array,
-    displayName?: string
-): Promise<void> {
-    const pool = getPool();
-
-    const event = {
-        kind: 1337,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [
-            ['e', boardId], // Use indexed 'e' tag
-            ['amount', zapAmount.toString()],
-            ...(sender ? [['sender', sender]] : []),
-            ...(displayName ? [["displayName",displayName]]: []),
-        ],
-        content,
-    };
-
-    const signedEvent = finalizeEvent(event, privateKey);
-
-    const pubs = pool.publish(DEFAULT_RELAYS, signedEvent);
-
-    await Promise.race([
-        Promise.all(pubs),
-        new Promise(resolve => setTimeout(resolve, 3000))
-    ]);
-}
-
-/**
- * Monitor zap receipts for a board
- */
-export function monitorZapReceipts(
-    boardId: string,
-    recipientPubkey: string,
-    onNewMessage: (message: ZapMessage) => void
-): () => void {
-    const pool = getPool();
-
-    const filter: Filter = {
-        kinds: [9735],
-        '#p': [recipientPubkey],
-        since: Math.floor(Date.now() / 1000),
-    };
-
-    const sub = pool.subscribeMany(
-        DEFAULT_RELAYS,
-        filter,
-        {
-            onevent: async (event: Event) => {
-                console.log('Zap receipt received:', event);
+                // Deduplicate at subscription level
+                if (seenIds.has(event.id)) return;
+                seenIds.add(event.id);
 
                 try {
                     const zapInfo = parseZapReceipt(event);
                     
                     if (!zapInfo) {
-                        console.log(" Could not parse zap receipt");
+                        console.log('Could not parse zap receipt');
                         return;
                     }
 
+                    // Filter for this board only
                     if (zapInfo.boardId !== boardId) {
-                        console.log('Zap not for this board');
                         return;
                     }
-
-                    console.log('Zap for this board:', zapInfo);
-
-                    const privateKey = generateSecretKey();
-                    await publishMessage(
-                        boardId,
-                        zapInfo.message,
-                        zapInfo.amount,
-                        zapInfo.sender,
-                        privateKey,
-                        zapInfo.displayName
-                    );
 
                     const message: ZapMessage = {
                         id: event.id,
@@ -247,17 +153,18 @@ export function monitorZapReceipts(
                         content: zapInfo.message,
                         zapAmount: zapInfo.amount,
                         sender: zapInfo.sender,
+                        displayName: zapInfo.displayName,
                         timestamp: event.created_at * 1000,
                     };
 
-                    onNewMessage(message);
+                    onMessage(message);
                 } catch (error) {
-                    console.error("Failed to process zap receipt:", error);
+                    console.error('Failed to process zap receipt:', error);
                 }
             },
         }
     );
 
-    console.log("Monitoring zap receipts for pubkey:", recipientPubkey);
+    console.log('Subscribed to zap receipts for:', recipientPubkey);
     return () => sub.close();
 }
