@@ -305,3 +305,122 @@ export function monitorZapReceipts(
     console.log('Monitoring new zap receipts for:', recipientPubkey);
     return () => sub.close();
 }
+
+/**
+ * Verify if a user is eligible to create an explorable board
+ * Requirements:
+ * - Must have NIP-05 identifier in kind 0 (profile metadata)
+ * - Must follow at least 10 people (kind 3 contact list)
+ */
+export async function verifyUserEligibility(
+    pubkey: string
+): Promise<{ eligible: boolean; reason?: string; nip05?: string }> {
+    const pool = getPool();
+
+    return new Promise((resolve) => {
+        let kind0Event: Event | null = null;
+        let kind3Event: Event | null = null;
+        let sub: any;
+
+        const timeout = setTimeout(() => {
+            if (sub) sub.close();
+
+            // Check eligibility after timeout
+            const result = checkEligibility(kind0Event, kind3Event);
+            resolve(result);
+        }, 5000);
+
+        // Query for kind 0 (profile) and kind 3 (contacts) events
+        const filter: Filter = {
+            kinds: [0, 3],
+            authors: [pubkey],
+            limit: 2,
+        };
+
+        sub = pool.subscribeMany(
+            DEFAULT_RELAYS,
+            filter,
+            {
+                onevent(event: Event) {
+                    if (event.kind === 0) {
+                        kind0Event = event;
+                    } else if (event.kind === 3) {
+                        kind3Event = event;
+                    }
+
+                    // If we have both events, check eligibility immediately
+                    if (kind0Event && kind3Event) {
+                        clearTimeout(timeout);
+                        if (sub) sub.close();
+                        const result = checkEligibility(kind0Event, kind3Event);
+                        resolve(result);
+                    }
+                },
+                oneose() {
+                    clearTimeout(timeout);
+                    if (sub) sub.close();
+                    const result = checkEligibility(kind0Event, kind3Event);
+                    resolve(result);
+                }
+            }
+        );
+    });
+}
+
+// Check eligibility based on fetched events
+function checkEligibility(
+    kind0Event: Event | null,
+    kind3Event: Event | null
+): { eligible: boolean; reason?: string; nip05?: string } {
+    // Check if profile exists
+    if (!kind0Event) {
+        return {
+            eligible: false,
+            reason: "No profile found. Please create a Nostr profile first.",
+        };
+    }
+
+    // Parse profile metadata
+    let profileData: any;
+    try {
+        profileData = JSON.parse(kind0Event.content);
+    } catch (err) {
+        return {
+            eligible: false,
+            reason: "Invalid profile data",
+        };
+    }
+
+    // Check for NIP-05
+    const nip05 = profileData.nip05;
+    if (!nip05 || !nip05.trim()) {
+        return {
+            eligible: false,
+            reason: "NIP-05 identifier required. Please add one to your profile.",
+        };
+    }
+
+    // Check if contact list exists
+    if (!kind3Event) {
+        return {
+            eligible: false,
+            reason: "No contact list found. Please follow at least 10 users.",
+        };
+    }
+
+    // Count follows
+    const followCount = kind3Event.tags.filter(tag => tag[0] === 'p').length;
+
+    if (followCount < 10) {
+        return {
+            eligible: false,
+            reason: `You need to follow at least 10 users. Currently following: ${followCount}`,
+        };
+    }
+
+    // All checks passed
+    return {
+        eligible: true,
+        nip05,
+    };
+}

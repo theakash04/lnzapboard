@@ -9,7 +9,7 @@ import {
 } from "../libs/crypto";
 import type { BoardConfig, StoredBoard } from "../types";
 import { validateNWC } from "../libs/nwc";
-import { publishBoardConfig } from "../libs/nostr";
+import { publishBoardConfig, verifyUserEligibility } from "../libs/nostr";
 import RetroFrame from "../components/Frame";
 import NostrLoginOverlay from "../components/NostrLoginOverlay";
 
@@ -32,6 +32,11 @@ function CreateBoard() {
   const [showLoginOverlay, setShowLoginOverlay] = useState(false);
   const [userPubkey, setUserPubkey] = useState<string>("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Add eligibility verification states
+  const [isVerifyingEligibility, setIsVerifyingEligibility] = useState(false);
+  const [isEligible, setIsEligible] = useState(false);
+  const [eligibilityError, setEligibilityError] = useState("");
 
   // Load existing boards from localStorage
   const [prevBoards, setPrevBoards] = useState<StoredBoard[]>([]);
@@ -57,11 +62,33 @@ function CreateBoard() {
   };
 
   // Handle successful login
-  const handleLoginSuccess = (pubkey: string) => {
+  const handleLoginSuccess = async (pubkey: string) => {
     setUserPubkey(pubkey);
     setIsLoggedIn(true);
     setIsExplorable(true);
     setShowLoginOverlay(false);
+
+    // Verify user eligibility after login
+    setIsVerifyingEligibility(true);
+    setEligibilityError("");
+
+    try {
+      const result = await verifyUserEligibility(pubkey);
+
+      if (result.eligible) {
+        setIsEligible(true);
+      } else {
+        setIsEligible(false);
+        setEligibilityError(
+          result.reason || "Not eligible to create explorable board"
+        );
+      }
+    } catch (err) {
+      setIsEligible(false);
+      setEligibilityError("Failed to verify eligibility. Please try again.");
+    } finally {
+      setIsVerifyingEligibility(false);
+    }
   };
 
   // Handle login modal close
@@ -71,6 +98,7 @@ function CreateBoard() {
     if (!isLoggedIn) {
       setIsExplorable(false);
     }
+    setEligibilityError("");
   };
 
   const handleNext = async () => {
@@ -123,7 +151,7 @@ function CreateBoard() {
         return;
       }
 
-      // Step 2: Handle Keys 
+      // Step 2: Handle Keys
       let privateKey: Uint8Array | null = null;
       let publicKey: string;
 
@@ -186,7 +214,7 @@ function CreateBoard() {
       return hasBasicInfo;
     }
     // If explorable, also need to be logged in
-    return hasBasicInfo && isLoggedIn;
+    return hasBasicInfo && isLoggedIn && !isVerifyingEligibility && isEligible;
   };
 
   const renderUsePreviousStep = () => (
@@ -367,23 +395,36 @@ function CreateBoard() {
                   />
                 </div>
 
-                {/* Explorable Toggle */}
+                {/* Explorable Toggle with eligibility status */}
                 <div className="bg-black border-2 border-yellow-400 p-4">
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <label className="text-yellow-300 font-bold">
                         Make Board Explorable
                       </label>
                       <p className="text-gray-400 text-sm mt-1">
                         Allow others to discover your board publicly
                       </p>
-                      {isLoggedIn && (
-                        <p className="text-green-400 text-sm mt-1">
-                          Connected with extension
+                      {/* Show different status messages based on verification state */}
+                      {isLoggedIn &&
+                        !isVerifyingEligibility &&
+                        !eligibilityError && (
+                          <p className="text-green-400 text-sm mt-1">
+                            Connected and verified
+                          </p>
+                        )}
+                      {isVerifyingEligibility && (
+                        <p className="text-yellow-400 text-sm mt-1">
+                          Verifying eligibility...
+                        </p>
+                      )}
+                      {eligibilityError && (
+                        <p className="text-red-400 text-sm mt-1">
+                          {eligibilityError}
                         </p>
                       )}
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label className="relative inline-flex items-center cursor-pointer ml-4">
                       <input
                         type="checkbox"
                         checked={isExplorable}
