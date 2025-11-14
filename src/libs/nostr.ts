@@ -23,20 +23,28 @@ export function getPool(): SimplePool {
  */
 export async function publishBoardConfig(
     config: BoardConfig,
-    privateKey: Uint8Array
+    privateKey: Uint8Array | null,
+    isExplorable: boolean = false
 ): Promise<void> {
     const pool = getPool();
+
+    // Base tags that are always included
+    const baseTags = [
+        ['d', config.boardId],
+        ['title', config.boardName],
+        ['ln', config.lightningAddress],
+        ['min_zap', config.minZapAmount.toString()],
+    ];
+
+    // Conditionally add 'zapboard' tag based on isExplorable
+    const tags = isExplorable
+        ? [...baseTags, ['t', 'zapboard']]
+        : baseTags;
 
     const event = {
         kind: 30078,
         created_at: Math.floor(Date.now() / 1000),
-        tags: [
-            ['d', config.boardId],
-            ['title', config.boardName],
-            ['ln', config.lightningAddress],
-            ['min_zap', config.minZapAmount.toString()],
-            ['t', 'zapboard']
-        ],
+        tags: tags,
         content: JSON.stringify({
             boardName: config.boardName,
             minZapAmount: config.minZapAmount,
@@ -45,7 +53,15 @@ export async function publishBoardConfig(
         }),
     };
 
-    const signedEvent = finalizeEvent(event, privateKey);
+    let signedEvent: Event;
+    if (privateKey === null) {
+        if (!window.nostr) {
+            throw new Error('Nostr extension not found');
+        }
+        signedEvent = await window.nostr.signEvent(event);
+    } else {
+        signedEvent = finalizeEvent(event, privateKey);
+    }
     const pubs = pool.publish(DEFAULT_RELAYS, signedEvent);
 
     await Promise.race([
@@ -195,7 +211,7 @@ export function subscribeToZapMessages(
 
                 try {
                     const zapInfo = parseZapReceipt(event);
-                    
+
                     if (!zapInfo) {
                         console.log('Could not parse zap receipt');
                         return;
@@ -256,7 +272,7 @@ export function monitorZapReceipts(
 
                 try {
                     const zapInfo = parseZapReceipt(event);
-                    
+
                     if (!zapInfo) {
                         console.log('Could not parse zap receipt');
                         return;

@@ -11,6 +11,7 @@ import type { BoardConfig, StoredBoard } from "../types";
 import { validateNWC } from "../libs/nwc";
 import { publishBoardConfig } from "../libs/nostr";
 import RetroFrame from "../components/Frame";
+import NostrLoginOverlay from "../components/NostrLoginOverlay";
 
 function CreateBoard() {
   const navigate = useNavigate();
@@ -26,6 +27,12 @@ function CreateBoard() {
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState("");
 
+  // Explorable board state
+  const [isExplorable, setIsExplorable] = useState(false);
+  const [showLoginOverlay, setShowLoginOverlay] = useState(false);
+  const [userPubkey, setUserPubkey] = useState<string>("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   // Load existing boards from localStorage
   const [prevBoards, setPrevBoards] = useState<StoredBoard[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<StoredBoard>();
@@ -37,6 +44,34 @@ function CreateBoard() {
     );
     if (boards.length) setPrevBoards(boards);
   }, []);
+
+  // Handle explorable toggle
+  const handleExplorableToggle = (checked: boolean) => {
+    if (checked && !isLoggedIn) {
+      setShowLoginOverlay(true);
+    } else if (!checked) {
+      setIsExplorable(false);
+      setIsLoggedIn(false);
+      setUserPubkey("");
+    }
+  };
+
+  // Handle successful login
+  const handleLoginSuccess = (pubkey: string) => {
+    setUserPubkey(pubkey);
+    setIsLoggedIn(true);
+    setIsExplorable(true);
+    setShowLoginOverlay(false);
+  };
+
+  // Handle login modal close
+  const handleLoginClose = () => {
+    setShowLoginOverlay(false);
+    // Reset toggle if they cancelled login
+    if (!isLoggedIn) {
+      setIsExplorable(false);
+    }
+  };
 
   const handleNext = async () => {
     if (!boardName.trim()) setError("Please enter a board name");
@@ -51,6 +86,16 @@ function CreateBoard() {
   const handleCreateBoard = async () => {
     if (!nwcString.trim()) {
       setError("Please paste your NWC connection string");
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("Please set a password");
+      return;
+    }
+
+    if (isExplorable && !isLoggedIn) {
+      setError("Please sign in with extension to make board explorable");
       return;
     }
 
@@ -78,8 +123,18 @@ function CreateBoard() {
         return;
       }
 
-      // Step 2: Generate ephemeral keys
-      const { privateKey, publicKey } = generateEphemeralKeys();
+      // Step 2: Handle Keys 
+      let privateKey: Uint8Array | null = null;
+      let publicKey: string;
+
+      if (isExplorable && isLoggedIn) {
+        publicKey = userPubkey;
+        privateKey = null; // use extension for signing
+      } else {
+        const keys = generateEphemeralKeys();
+        privateKey = keys.privateKey;
+        publicKey = keys.publicKey;
+      }
 
       // Step 3: Generate board ID
       const boardId = generateBoardId();
@@ -95,7 +150,7 @@ function CreateBoard() {
       };
 
       // Step 5: Publish to Nostr
-      await publishBoardConfig(boardConfig, privateKey);
+      await publishBoardConfig(boardConfig, privateKey, isExplorable);
 
       // Encrypt NWC string with password
       const encryptedNWC = encryptNwc(nwcString, password);
@@ -124,6 +179,16 @@ function CreateBoard() {
     }
   };
 
+  // Check if create button should be enabled
+  const isCreateButtonEnabled = () => {
+    const hasBasicInfo = nwcString.trim() && password.trim();
+    if (!isExplorable) {
+      return hasBasicInfo;
+    }
+    // If explorable, also need to be logged in
+    return hasBasicInfo && isLoggedIn;
+  };
+
   const renderUsePreviousStep = () => (
     <div className="space-y-4">
       <h2 className="text-yellow-300 font-bold mb-2">Select a Board</h2>
@@ -141,10 +206,8 @@ function CreateBoard() {
               // highlight and show-arrow
               className={`w-full flex justify-between items-center font-bold py-2 px-3 uppercase border-2 transition-all duration-200 ${
                 isSelected
-                  ? 
-                    "bg-yellow-100 text-black border-yellow-300"
-                  : 
-                    "bg-yellow-400 hover:bg-yellow-500 text-black border-yellow-300"
+                  ? "bg-yellow-100 text-black border-yellow-300"
+                  : "bg-yellow-400 hover:bg-yellow-500 text-black border-yellow-300"
               }`}
             >
               <span>{board.config.boardName}</span>
@@ -304,6 +367,36 @@ function CreateBoard() {
                   />
                 </div>
 
+                {/* Explorable Toggle */}
+                <div className="bg-black border-2 border-yellow-400 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-yellow-300 font-bold">
+                        Make Board Explorable
+                      </label>
+                      <p className="text-gray-400 text-sm mt-1">
+                        Allow others to discover your board publicly
+                      </p>
+                      {isLoggedIn && (
+                        <p className="text-green-400 text-sm mt-1">
+                          Connected with extension
+                        </p>
+                      )}
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isExplorable}
+                        onChange={(e) =>
+                          handleExplorableToggle(e.target.checked)
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                  </div>
+                </div>
+
                 {error && <p className="text-red-400 text-sm">{error}</p>}
 
                 <div className="flex gap-4">
@@ -328,6 +421,13 @@ function CreateBoard() {
           </div>
         </RetroFrame>
       </div>
+      {/* Login Overlay */}
+      {showLoginOverlay && (
+        <NostrLoginOverlay
+          onSuccess={handleLoginSuccess}
+          onClose={handleLoginClose}
+        />
+      )}
     </div>
   );
 }

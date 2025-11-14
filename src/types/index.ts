@@ -29,3 +29,14 @@ export interface StoredBoard {
   config: BoardConfig;
   createdAt: number;
 }
+
+export interface WindowNostr {
+  getPublicKey(): Promise<string>;
+  signEvent(event: any): Promise<any>;
+}
+
+declare global {
+  interface Window {
+    nostr?: WindowNostr;
+  }
+}
