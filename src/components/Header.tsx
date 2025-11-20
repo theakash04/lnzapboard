@@ -5,7 +5,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   return (
-    <header className="bg-black border-b-2 border-yellow-500/50 p-4">
+    <header className="bg-blackish border-b-2 border-yellow-500/20 p-4">
       <div className="w-full mx-auto flex items-center justify-between px-8">
         <div
           onClick={() => navigate("/")}

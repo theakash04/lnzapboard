@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="bg-black border-t-2 border-yellow-500/50 p-6">
+    <footer className="bg-blackish border-t-2 border-yellow-500/20 p-6">
       <div className="flex items-center justify-center text-white/60 text-sm">
         Made with <span className="mx-1 text-yellow-400">⚡</span>by{" "}
         <a
