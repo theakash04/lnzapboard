@@ -271,7 +271,7 @@ function CreateBoard() {
   };
 
   const renderPreviousBoardsModal = () => (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 scrollbar-custom">
       <div className="card-style p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
         <h2 className="text-yellow-text/90 font-bold text-xl mb-4">Select a Previous Board</h2>
 
