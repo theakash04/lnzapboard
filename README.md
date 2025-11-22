@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="./public/lnzapboard-logo.png" alt="LN ZapBoard" width="100"/>
+  <img src="./public/lnzapboard-logo.png" alt="zapit" width="100"/>
 </p>
 
 <h1 align="center">Zapit</h1>
 
 <p align="center">
-  Transform your Lightning payments into interactive message boards — built for freedom, powered by Bitcoin.
+  Create live message boards powered by instant Bitcoin payments. No accounts, no hassle—just real-time engagement for your events and communities.
 </p>
 
 ---
 
-## What is LN ZapBoard?
+## What is Zapit ?
 
-**LN ZapBoard** transforms **Lightning Network payments** into **interactive message boards**.  
-Users send Bitcoin zaps with messages that appear live on the board — perfect for **Q&A sessions**, **live events**, **community feedback**, or any setup where you want to **monetize engagement**.
+**Zapit** transforms **Lightning Network payments** into **interactive message boards**.  
+Users send bitcoin lighting zaps with messages that appear live on the board — perfect for **Q&A sessions**, **live events**, **community feedback**, or any setup where you want to **monetize engagement**.
 
 ## Key Features
 
@@ -31,12 +31,10 @@ Users send Bitcoin zaps with messages that appear live on the board — perfect 
 
 - Set your board name and Lightning address
 - Configure minimum zap amount
-- Connect your Nostr Wallet Connect (NWC) string
 
 ### 2. Share Your Board
 
-- Get a unique QR code for your board
-- Share the link with your audience
+- Get a link for your board, share the link with your audience
 - Display it at events, streams, or presentations
 
 ### 3. Receive Zaps
@@ -77,5 +75,5 @@ Let’s keep the Lightning spirit alive ⚡
 ---
 
 <p align="center">
-  Made with ⚡ by <a href="https://lnzapboard.mistic.xyz/zapme" target="_blank">mist</a> for freedom.
+  Made with ⚡ by <a href="https://zapit.space/zapme" target="_blank">mist</a> for freedom.
 </p>
