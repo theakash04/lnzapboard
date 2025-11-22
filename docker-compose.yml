@@ -1,38 +1,37 @@
-
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    volumes:
-      - app_data:/app/dist-volume
-    networks:
-      - app_network
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        volumes:
+            - app_data:/app/dist-volume
+        networks:
+            - app_network
 
-  caddy:
-    image: caddy:latest
-    container_name: lnzapboard_caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - app_data:/srv
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - app
-    networks:
-      - app_network
+    caddy:
+        image: caddy:latest
+        container_name: lnzapboard_caddy
+        restart: unless-stopped
+        ports:
+            - "80:80"
+            - "443:443"
+            - "443:443/udp"
+        volumes:
+            - ./Caddyfile:/etc/caddy/Caddyfile
+            - app_data:/srv
+            - caddy_data:/data
+            - caddy_config:/config
+        depends_on:
+            - app
+        networks:
+            - app_network
 
 volumes:
-  app_data:
-  caddy_data:
-  caddy_config:
+    app_data:
+    caddy_data:
+    caddy_config:
 
 networks:
-  app_network:
-    driver: bridge
+    app_network:
+        driver: bridge

@@ -1,5 +1,5 @@
-import { NostrWebLNProvider } from '@getalby/sdk'
-import type { NWCInfo } from '../types/types';
+import { NostrWebLNProvider } from "@getalby/sdk";
+import type { NWCInfo } from "../types/types";
 
 /**
  * Parse NWC connection string
@@ -11,23 +11,23 @@ export function parseNWCString(nwcString: string): NWCInfo | null {
         const cleaned = nwcString.trim();
 
         // Check if it starts with correct protocol
-        if (!cleaned.startsWith('nostr+walletconnect://')) {
-            throw new Error('Invalid NWC string format');
+        if (!cleaned.startsWith("nostr+walletconnect://")) {
+            throw new Error("Invalid NWC string format");
         }
 
         // Parse as URL
         const url = new URL(cleaned);
-        const pubkey = url.hostname || url.pathname.replace('//', '');
-        const relay = url.searchParams.get('relay');
-        const secret = url.searchParams.get('secret');
+        const pubkey = url.hostname || url.pathname.replace("//", "");
+        const relay = url.searchParams.get("relay");
+        const secret = url.searchParams.get("secret");
 
         if (!pubkey || !relay || !secret) {
-            throw new Error('Missing required parameters');
+            throw new Error("Missing required parameters");
         }
 
         return { pubkey, relay, secret };
     } catch (error) {
-        console.error('Failed to parse NWC string:', error);
+        console.error("Failed to parse NWC string:", error);
         return null;
     }
 }
@@ -49,13 +49,13 @@ export async function validateNWC(nwcString: string): Promise<{
         if (!parsed) {
             return {
                 valid: false,
-                error: 'Invalid NWC connection string format'
+                error: "Invalid NWC connection string format",
             };
         }
 
         // Try to connect
         const nwc = new NostrWebLNProvider({
-            nostrWalletConnectUrl: nwcString
+            nostrWalletConnectUrl: nwcString,
         });
 
         await nwc.enable();
@@ -64,32 +64,29 @@ export async function validateNWC(nwcString: string): Promise<{
         const info = await nwc.getInfo();
 
         // Check if wallet supports required methods
-        const requiredMethods = ["getInfo","makeInvoice"];
+        const requiredMethods = ["getInfo", "makeInvoice"];
         const supportedMethods = info.methods || [];
-        const hasRequired = requiredMethods.every(m =>
-            supportedMethods.includes(m)
-        );
+        const hasRequired = requiredMethods.every(m => supportedMethods.includes(m));
 
         if (!hasRequired) {
             return {
                 valid: false,
-                error: 'Wallet does not support required methods'
+                error: "Wallet does not support required methods",
             };
         }
 
         return {
             valid: true,
             info: {
-                alias: info.alias || 'Unknown Wallet',
-                methods: supportedMethods
-            }
+                alias: info.alias || "Unknown Wallet",
+                methods: supportedMethods,
+            },
         };
-
     } catch (error) {
-        console.error('NWC validation error:', error);
+        console.error("NWC validation error:", error);
         return {
             valid: false,
-            error: error instanceof Error ? error.message : 'Connection failed'
+            error: error instanceof Error ? error.message : "Connection failed",
         };
     }
 }
@@ -99,7 +96,7 @@ export async function validateNWC(nwcString: string): Promise<{
  */
 export async function createNWCInstance(nwcString: string) {
     const nwc = new NostrWebLNProvider({
-        nostrWalletConnectUrl: nwcString
+        nostrWalletConnectUrl: nwcString,
     });
 
     await nwc.enable();

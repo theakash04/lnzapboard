@@ -1,9 +1,6 @@
-import {
-    makeZapRequest,
-    validateZapRequest,
-} from 'nostr-tools/nip57';
-import { generateSecretKey, finalizeEvent } from 'nostr-tools';
-import type { EventTemplate } from 'nostr-tools';
+import { makeZapRequest, validateZapRequest } from "nostr-tools/nip57";
+import { generateSecretKey, finalizeEvent } from "nostr-tools";
+import type { EventTemplate } from "nostr-tools";
 
 interface GenerateInvoiceParams {
     lightningAddress: string;
@@ -23,9 +20,9 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
 
     try {
         // Parse Lightning address
-        const [username, domain] = lightningAddress.split('@');
+        const [username, domain] = lightningAddress.split("@");
         if (!username || !domain) {
-            throw new Error('Invalid Lightning address');
+            throw new Error("Invalid Lightning address");
         }
 
         // Generate ephemeral keypair for this zap
@@ -37,14 +34,14 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
         const lnurlResponse = await fetch(lnurlUrl);
 
         if (!lnurlResponse.ok) {
-            throw new Error('Lightning address not found');
+            throw new Error("Lightning address not found");
         }
 
         const lnurlData = await lnurlResponse.json();
 
         // Check if zaps are supported
         if (!lnurlData.allowsNostr || !lnurlData.nostrPubkey) {
-            throw new Error('This Lightning address does not support zaps');
+            throw new Error("This Lightning address does not support zaps");
         }
 
         // Create zap request
@@ -52,20 +49,16 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
             pubkey: recipientPubkey,
             amount: amount * 1000, // millisats
             //   comment: message,
-            relays: [
-                'wss://relay.damus.io',
-                'wss://nos.lol',
-                'wss://relay.snort.social',
-            ],
+            relays: ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.snort.social"],
         });
 
         zapRequestTemplate.content = message;
 
         // Add custom board tag
-        zapRequestTemplate.tags.push(['board', boardId]);
+        zapRequestTemplate.tags.push(["board", boardId]);
 
         if (params.displayName) {
-            zapRequestTemplate.tags.push(['displayName', displayName!]);
+            zapRequestTemplate.tags.push(["displayName", displayName!]);
         }
 
         // Sign the zap request
@@ -79,33 +72,32 @@ export async function generateInvoice(params: GenerateInvoiceParams): Promise<{
 
         // Request invoice from LNURL callback
         const callbackUrl = new URL(lnurlData.callback);
-        callbackUrl.searchParams.set('amount', (amount * 1000).toString());
-        callbackUrl.searchParams.set('nostr', JSON.stringify(signedZapRequest));
+        callbackUrl.searchParams.set("amount", (amount * 1000).toString());
+        callbackUrl.searchParams.set("nostr", JSON.stringify(signedZapRequest));
         // callbackUrl.searchParams.set('comment', message);
 
         const invoiceResponse = await fetch(callbackUrl.toString());
 
         if (!invoiceResponse.ok) {
-            throw new Error('Failed to get invoice');
+            throw new Error("Failed to get invoice");
         }
 
         const invoiceData = await invoiceResponse.json();
 
-        if (invoiceData.status === 'ERROR') {
-            throw new Error(invoiceData.reason || 'Invoice generation failed');
+        if (invoiceData.status === "ERROR") {
+            throw new Error(invoiceData.reason || "Invoice generation failed");
         }
 
         if (!invoiceData.pr) {
-            throw new Error('No invoice returned');
+            throw new Error("No invoice returned");
         }
 
         return {
             invoice: invoiceData.pr,
             zapRequest: signedZapRequest,
         };
-
     } catch (error) {
-        console.error('Generate invoice error:', error);
+        console.error("Generate invoice error:", error);
         throw error;
     }
 }
@@ -122,7 +114,7 @@ export function parseZapReceipt(zapReceipt: any): {
 } | null {
     try {
         // Find the description tag (contains zap request)
-        const descriptionTag = zapReceipt.tags.find((t: string[]) => t[0] === 'description');
+        const descriptionTag = zapReceipt.tags.find((t: string[]) => t[0] === "description");
         if (!descriptionTag || !descriptionTag[1]) {
             return null;
         }
@@ -131,20 +123,19 @@ export function parseZapReceipt(zapReceipt: any): {
         const zapRequest = JSON.parse(descriptionTag[1]);
 
         // Extract message from content
-        const message = zapRequest.content || '';
+        const message = zapRequest.content || "";
 
         // Extract board ID from custom tag
-        const boardTag = zapRequest.tags?.find((t: string[]) => t[0] === 'board');
+        const boardTag = zapRequest.tags?.find((t: string[]) => t[0] === "board");
         const boardId = boardTag?.[1];
 
         // Extract displayName tag
-        const displayNameTag = zapRequest.tags?.find((t: string[]) => t[0] === 'displayName');
+        const displayNameTag = zapRequest.tags?.find((t: string[]) => t[0] === "displayName");
         const displayName = displayNameTag?.[1] || "Anonymous";
-        console.log("parseZapReq> displayName:",displayName)
-
+        console.log("parseZapReq> displayName:", displayName);
 
         // Extract amount from zap request
-        const amountTag = zapRequest.tags?.find((t: string[]) => t[0] === 'amount');
+        const amountTag = zapRequest.tags?.find((t: string[]) => t[0] === "amount");
         const amountMillisats = amountTag?.[1] ? parseInt(amountTag[1]) : 0;
         const amount = Math.floor(amountMillisats / 1000);
 
@@ -156,7 +147,7 @@ export function parseZapReceipt(zapReceipt: any): {
             displayName,
         };
     } catch (error) {
-        console.error('Failed to parse zap receipt:', error);
+        console.error("Failed to parse zap receipt:", error);
         return null;
     }
 }
