@@ -1,22 +1,21 @@
-import { generateSecretKey, getPublicKey } from 'nostr-tools';
-import { bytesToHex } from 'nostr-tools/utils';
-import CryptoJS from "crypto-js" ;
+import { generateSecretKey, getPublicKey } from "nostr-tools";
+import { bytesToHex } from "nostr-tools/utils";
+import CryptoJS from "crypto-js";
 
 export function generateEphemeralKeys(): {
-    privateKey: Uint8Array;
-    publicKey: string;
+  privateKey: Uint8Array;
+  publicKey: string;
 } {
-    const privateKey = generateSecretKey();
-    const publicKey = getPublicKey(privateKey);
+  const privateKey = generateSecretKey();
+  const publicKey = getPublicKey(privateKey);
 
-    return { privateKey, publicKey };
+  return { privateKey, publicKey };
 }
 
 export function generateBoardId(): string {
-    const boardId = bytesToHex(generateSecretKey());
-    return boardId;
+  const boardId = bytesToHex(generateSecretKey());
+  return boardId;
 }
-
 
 // Encrypt text with password
 export function encryptNwc(text: string, password: string): string {

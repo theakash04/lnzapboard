@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { fetchBoardConfig, subscribeToZapMessages } from "../libs/nostr";
 import type { BoardConfig, ZapMessage } from "../types/types";
-import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
+import { FaLink, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 
 import generalMsgSfx from "../assets/sounds/general-msg.wav";
 import top1Sfx from "../assets/sounds/top1.wav";
@@ -11,6 +11,7 @@ import top2Sfx from "../assets/sounds/top2.wav";
 import top3Sfx from "../assets/sounds/top3.wav";
 import Loading from "../components/Loading";
 import { BsLightning } from "react-icons/bs";
+import { RiVerifiedBadgeFill } from "react-icons/ri";
 
 const RANK_COLORS = [
   {
@@ -79,8 +80,8 @@ export default function BoardDisplay() {
       boardId,
       boardConfig.creatorPubkey,
       (message: ZapMessage) => {
-        setMessages((prev) => {
-          if (prev.find((m) => m.id === message.id)) return prev;
+        setMessages(prev => {
+          if (prev.find(m => m.id === message.id)) return prev;
 
           if (!isMuted && !isLeaderboardSoundPlayingRef.current) {
             const audio = new Audio(generalMsgSfx);
@@ -96,10 +97,7 @@ export default function BoardDisplay() {
     return () => unsubscribe();
   }, [boardId, boardConfig]);
 
-  const totalSats = useMemo(
-    () => messages.reduce((sum, m) => sum + m.zapAmount, 0),
-    [messages]
-  );
+  const totalSats = useMemo(() => messages.reduce((sum, m) => sum + m.zapAmount, 0), [messages]);
   const sortedMessages = useMemo(
     () => [...messages].sort((a, b) => b.timestamp - a.timestamp),
     [messages]
@@ -110,7 +108,7 @@ export default function BoardDisplay() {
   );
 
   useEffect(() => {
-    const currentLeaderIds = leaderboard.map((m) => m.id);
+    const currentLeaderIds = leaderboard.map(m => m.id);
 
     leaderboard.forEach((msg, idx) => {
       const wasInTop3 = prevLeaders.includes(msg.id);
@@ -120,38 +118,21 @@ export default function BoardDisplay() {
       // Check if user is new to top 3 or moved up
       if (!wasInTop3 || movedUp) {
         // Highlight row
-        setHighlightedRows((prev) => [...prev, msg.id]);
-        setTimeout(
-          () =>
-            setHighlightedRows((prev) => prev.filter((id) => id !== msg.id)),
-          2000
-        );
+        setHighlightedRows(prev => [...prev, msg.id]);
+        setTimeout(() => setHighlightedRows(prev => prev.filter(id => id !== msg.id)), 2000);
 
         // Add to promoted users for name highlight
-        setPromotedUsers((prev) => [...prev, msg.id]);
-        setTimeout(
-          () => setPromotedUsers((prev) => prev.filter((id) => id !== msg.id)),
-          3000
-        );
+        setPromotedUsers(prev => [...prev, msg.id]);
+        setTimeout(() => setPromotedUsers(prev => prev.filter(id => id !== msg.id)), 3000);
 
         // Play sound
-        const sound =
-          idx === 0
-            ? top1Sfx
-            : idx === 1
-            ? top2Sfx
-            : idx === 2
-            ? top3Sfx
-            : null;
+        const sound = idx === 0 ? top1Sfx : idx === 1 ? top2Sfx : idx === 2 ? top3Sfx : null;
         if (sound && !isMuted) {
           const audio = new Audio(sound);
           audio.volume = volume;
           audio.play().catch(() => {});
           isLeaderboardSoundPlayingRef.current = true;
-          setTimeout(
-            () => (isLeaderboardSoundPlayingRef.current = false),
-            1500
-          );
+          setTimeout(() => (isLeaderboardSoundPlayingRef.current = false), 1500);
         }
       }
     });
@@ -169,9 +150,7 @@ export default function BoardDisplay() {
   if (loading) return <Loading />;
   if (error || !boardConfig)
     return (
-      <div className="min-h-screen text-red-600 text-xl p-10">
-        {error || "Board not found"}
-      </div>
+      <div className="min-h-screen text-red-600 text-xl p-10">{error || "Board not found"}</div>
     );
 
   return (
@@ -179,12 +158,30 @@ export default function BoardDisplay() {
       {/* Full container */}
       <div className="w-full mx-auto space-y-6">
         {/* Board name + volume */}
-        <div className="card-style p-4 flex justify-between items-center">
-          <h2 className="text-2xl lg:max-proj:text-4xl proj:text-8xl  text-center w-full font-semibold text-yellow-300 animate-pulse">
-            {boardConfig.boardName}
+        <div className="card-style p-4 flex sm:flex-row flex-col justify-between items-center gap-4">
+          <h2 className="text-4xl lg:max-proj:text-4xl proj:text-8xl text-center w-full font-semibold text-yellow-300 flex items-center justify-center gap-2">
+            <div className=" flex items-center justify-center gap-2">
+              <span className="animate-pulse">{boardConfig.boardName}</span>
+              {boardConfig.isExplorable && (
+                <RiVerifiedBadgeFill className="text-xl proj:text-7xl text-violet-300" />
+              )}
+            </div>
           </h2>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/board/${boardId}`;
+                navigator.clipboard.writeText(url);
+              }}
+              className="text-gray-300 hover:text-gray-200 opacity-90 hover:opacity-100 transition-all duration-300"
+              title="Copy board URL"
+            >
+              <FaLink
+                size={20}
+                className="text-gray-400 hover:text-yellow-400/60 ease-in-out transition-all duration-300"
+              />
+            </button>
             <button
               onClick={() => setIsMuted(!isMuted)}
               className="text-violet-300 hover:text-violet-200 opacity-65"
@@ -197,7 +194,7 @@ export default function BoardDisplay() {
               max="1"
               step="0.05"
               value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              onChange={e => setVolume(parseFloat(e.target.value))}
               className="w-32 accent-violet-400 opacity-60"
             />
           </div>
@@ -208,17 +205,13 @@ export default function BoardDisplay() {
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4">
               <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
-                <span className="text-md lg:max-proj:text-lg proj:text-3xl">
-                  Total Sats
-                </span>
+                <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Sats</span>
                 <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
                   {totalSats}
                 </span>
               </div>
               <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
-                <span className="text-md lg:max-proj:text-lg proj:text-3xl">
-                  Total Messages
-                </span>
+                <span className="text-md lg:max-proj:text-lg proj:text-3xl">Total Messages</span>
                 <span className="text-yellow-300/90 text-xl lg:max-proj:text-2xl proj:text-7xl">
                   {messages.length}
                 </span>
@@ -231,13 +224,11 @@ export default function BoardDisplay() {
                   Waiting for messages…
                 </p>
               ) : (
-                sortedMessages.map((msg) => (
+                sortedMessages.map(msg => (
                   <div
                     key={msg.id}
                     className={`bg-blackish border-border-purple border p-4 mb-4 transition-all ease-linear flex flex-col ${
-                      highlightedRows.includes(msg.id)
-                        ? "border-yellow-200/60"
-                        : ""
+                      highlightedRows.includes(msg.id) ? "border-yellow-200/60" : ""
                     }`}
                   >
                     <div className="font-bold flex justify-between items-center gap-5">
@@ -285,9 +276,7 @@ export default function BoardDisplay() {
                       key={m.id}
                       className={`p-2 rounded-lg border transition-all duration-300 ${
                         isPromoted
-                          ? `border-${rankColor.text.split("-")[1]}-400 ${
-                              rankColor.glow
-                            }`
+                          ? `border-${rankColor.text.split("-")[1]}-400 ${rankColor.glow}`
                           : "border-border-purple"
                       } ${highlightedRows.includes(m.id) ? "" : "bg-blackish"}`}
                     >
@@ -300,9 +289,7 @@ export default function BoardDisplay() {
                               >
                                 {i + 1}
                               </div>
-                              <div
-                                className={`font-bold ${rankColor.text} text-lg proj:text-2xl`}
-                              >
+                              <div className={`font-bold ${rankColor.text} text-lg proj:text-2xl`}>
                                 {m.displayName || "Anon"}
                               </div>
                             </div>
@@ -332,9 +319,7 @@ export default function BoardDisplay() {
 
             {/* QR Section */}
             <div className="bg-card-bg p-6 shadow-lg text-center">
-              <h3 className="font-bold text-xl proj:text-4xl text-violet-300 mb-4">
-                Scan to Zap
-              </h3>
+              <h3 className="font-bold text-xl proj:text-4xl text-violet-300 mb-4">Scan to Zap</h3>
               <a
                 href={`${window.location.origin}/pay/${boardId}`}
                 target="_blank"
@@ -342,13 +327,7 @@ export default function BoardDisplay() {
               >
                 <QRCodeSVG
                   value={`${window.location.origin}/pay/${boardId}`}
-                  size={
-                    window.innerWidth < 640
-                      ? 180
-                      : window.innerWidth < 2000
-                      ? 290
-                      : 600
-                  }
+                  size={window.innerWidth < 640 ? 180 : window.innerWidth < 2000 ? 290 : 600}
                   level="M"
                   bgColor="#ffffff"
                   fgColor="#000000"

@@ -4,12 +4,13 @@ import { validateLightningAddress } from "../libs/lighting";
 import { generateBoardId, generateEphemeralKeys } from "../libs/crypto";
 import type { BoardConfig, StoredBoard } from "../types/types";
 import { publishBoardConfig, verifyUserEligibility } from "../libs/nostr";
-import { generatePremiumInvoice, monitorPremiumPayment,
-} from "../libs/payments";
-import RetroFrame from "../components/Frame";
+import { generatePremiumInvoice, monitorPremiumPayment, PREMIUM_AMOUNT } from "../libs/payments";
 import NostrLoginOverlay from "../components/NostrLoginOverlay";
-import { PREMIUM_AMOUNT, PREMIUM_LIGHTNING_ADDRESS } from "../libs/payments";
+import { BsLightning, BsShieldCheck } from "react-icons/bs";
+import { FiInfo } from "react-icons/fi";
+import { MdVerified } from "react-icons/md";
 import { QRCodeSVG } from "qrcode.react";
+import { FaCheck, FaCopy } from "react-icons/fa";
 
 function CreateBoard() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ function CreateBoard() {
   const [minZapAmount, setMinZapAmount] = useState(1000);
   const [error, setError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [invoiceCopied, setInvoiceCopied] = useState(false);
 
   // Explorable board state
   const [isExplorable, setIsExplorable] = useState(false);
@@ -47,9 +49,7 @@ function CreateBoard() {
   const boardId = generateBoardId();
 
   useEffect(() => {
-    const boards: StoredBoard[] = JSON.parse(
-      localStorage.getItem("boards") || "[]"
-    );
+    const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
     if (boards.length) setPrevBoards(boards);
   }, []);
 
@@ -66,14 +66,12 @@ function CreateBoard() {
     }
   };
 
-  // Handle successful login
   const handleLoginSuccess = async (pubkey: string) => {
     setUserPubkey(pubkey);
     setIsLoggedIn(true);
     setIsExplorable(true);
     setShowLoginOverlay(false);
 
-    // Verify user eligibility after login
     setIsVerifyingEligibility(true);
     setEligibilityError("");
 
@@ -82,14 +80,11 @@ function CreateBoard() {
 
       if (result.eligible) {
         setIsEligible(true);
-        // Show payment QR
         showPaymentModal(boardId, pubkey);
       } else {
         setIsEligible(false);
         setIsExplorable(false);
-        setEligibilityError(
-          result.reason || "Not eligible to create explorable board"
-        );
+        setEligibilityError(result.reason || "Not eligible to create explorable board");
       }
     } catch (err) {
       setIsEligible(false);
@@ -100,15 +95,13 @@ function CreateBoard() {
     }
   };
 
-  // Show payment modal
   const showPaymentModal = async (boardId: string, pubkey: string) => {
     const res = await generatePremiumInvoice(boardId, pubkey);
     setPremiumInvoice(res!.invoice);
     setShowPaymentQR(true);
     setIsWaitingPayment(true);
 
-    // Monitor for payment
-    const cleanup = monitorPremiumPayment(
+    monitorPremiumPayment(
       boardId,
       pubkey,
       () => {
@@ -116,17 +109,13 @@ function CreateBoard() {
         setIsWaitingPayment(false);
         setShowPaymentQR(false);
       },
-      (error) => {
+      error => {
         setError(error);
         setIsWaitingPayment(false);
       }
     );
-
-    // Store cleanup function for unmount
-    return cleanup;
   };
 
-  // Handle login modal close
   const handleLoginClose = () => {
     setShowLoginOverlay(false);
     if (!isLoggedIn) {
@@ -136,7 +125,6 @@ function CreateBoard() {
   };
 
   const handleCreateBoard = async () => {
-    // Validation
     if (!boardName.trim()) {
       setError("Please enter a board name");
       return;
@@ -156,7 +144,6 @@ function CreateBoard() {
     setError("");
 
     try {
-      // Validate Lightning address
       const validation = await validateLightningAddress(lightningAddress);
       if (!validation.valid) {
         setError(validation.error || "Invalid Lightning address");
@@ -164,20 +151,18 @@ function CreateBoard() {
         return;
       }
 
-      // Handle Keys
       let privateKey: Uint8Array | null = null;
       let publicKey: string;
 
       if (isExplorable && isLoggedIn) {
         publicKey = userPubkey;
-        privateKey = null; // use extension for signing
+        privateKey = null;
       } else {
         const keys = generateEphemeralKeys();
         privateKey = keys.privateKey;
         publicKey = keys.publicKey;
       }
 
-      // Create board config
       const boardConfig: BoardConfig = {
         boardId,
         boardName,
@@ -188,13 +173,9 @@ function CreateBoard() {
         isExplorable: isExplorable && isPaid,
       };
 
-      // Publish to Nostr
       await publishBoardConfig(boardConfig, privateKey, isExplorable && isPaid);
 
-      // Store in localStorage
-      const boards: StoredBoard[] = JSON.parse(
-        localStorage.getItem("boards") || "[]"
-      );
+      const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
       boards.push({
         boardId,
         config: boardConfig,
@@ -202,7 +183,6 @@ function CreateBoard() {
       });
       localStorage.setItem("boards", JSON.stringify(boards));
 
-      // Navigate to BoardDisplay
       navigate(`/board/${boardId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create board");
@@ -211,34 +191,101 @@ function CreateBoard() {
     }
   };
 
-  // Check if create button should be enabled
   const isCreateButtonEnabled = () => {
     const hasBasicInfo = boardName.trim() && lightningAddress.trim();
     if (!isExplorable) {
       return hasBasicInfo;
     }
-    // If explorable, also need payment completed
     return hasBasicInfo && isLoggedIn && isEligible && isPaid;
   };
 
+  const renderPaymentQR = () => {
+    return (
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+        <div className="card-style p-6 max-w-md w-full">
+          <h2 className="text-yellow-text/90 font-bold text-xl mb-4">Premium Board Payment</h2>
+          <p className="text-white text-sm mb-4">
+            Pay <span className="text-yellow-text/90 font-bold">{PREMIUM_AMOUNT} sats</span> to
+            unlock premium features
+          </p>
+
+          <div className="bg-white p-4 mb-4">
+            <QRCodeSVG
+              value={premiumInvoice}
+              size={220}
+              level="M"
+              className="mx-auto w-full h-auto"
+            />
+          </div>
+
+          {/* Copy Invoice Button */}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(premiumInvoice);
+              setInvoiceCopied(true);
+              setTimeout(() => setInvoiceCopied(false), 2000);
+            }}
+            className="w-full mb-4 bg-violet-300/10 hover:bg-violet-300/20 text-violet-300 font-bold py-3 text-sm border border-violet-300/30 hover:border-violet-300/50 transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            {invoiceCopied ? (
+              <>
+                <FaCheck className="transition-all duration-300" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <FaCopy className="transition-all duration-300" />
+                Copy Invoice
+              </>
+            )}
+          </button>
+
+          {isWaitingPayment && (
+            <div className="mb-4 p-3 bg-yellow-text/10 border border-yellow-text/30">
+              <p className="text-yellow-text/90 text-center text-sm animate-pulse">
+                ⚡ Waiting for payment...
+              </p>
+            </div>
+          )}
+
+          {isPaid && (
+            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30">
+              <p className="text-green-400 text-center text-sm font-bold">✓ Payment Confirmed!</p>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setShowPaymentQR(false);
+              setIsExplorable(false);
+              setIsLoggedIn(false);
+              setIsPaid(false);
+            }}
+            className="w-full bg-transparent hover:bg-gray-700/30 text-white font-bold py-3 text-sm border-2 border-gray-600 hover:border-gray-500 transition-all duration-300"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderPreviousBoardsModal = () => (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-black border-4 border-yellow-400 p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-        <h2 className="text-yellow-300 font-bold text-xl mb-4">
-          Select a Previous Board
-        </h2>
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+      <div className="card-style p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+        <h2 className="text-yellow-text/90 font-bold text-xl mb-4">Select a Previous Board</h2>
 
         <div className="space-y-3 mb-4">
-          {prevBoards.map((board) => {
+          {prevBoards.map(board => {
             const isSelected = selectedBoard?.boardId === board.boardId;
             return (
               <button
                 key={board.boardId}
                 onClick={() => setSelectedBoard(board)}
-                className={`w-full text-left font-bold py-3 px-4 uppercase border-2 transition-all duration-200 ${
+                className={`w-full text-left font-bold py-3 px-4 uppercase border-2 transition-all duration-300 ${
                   isSelected
-                    ? "bg-yellow-400 text-black border-yellow-300"
-                    : "bg-black text-yellow-300 border-yellow-400 hover:bg-yellow-500 hover:text-black"
+                    ? "bg-yellow-text/90 text-blackish border-yellow-text/90"
+                    : "bg-transparent text-gray-400 border-border-purple hover:border-violet-300/30 hover:text-gray-300"
                 }`}
               >
                 {board.config.boardName}
@@ -251,26 +298,21 @@ function CreateBoard() {
           <div className="space-y-3">
             <button
               onClick={() => navigate(`/board/${selectedBoard.boardId}`)}
-              className="w-full bg-green-400 hover:bg-green-500 text-black font-bold py-3 uppercase border-2 border-green-300 transition-all duration-200"
+              className="w-full bg-yellow-text/90 hover:bg-yellow-text text-blackish font-bold py-3 uppercase transition-all duration-300"
             >
               Open Board
             </button>
 
             <button
               onClick={() => {
-                const confirmDelete = confirm(
-                  `Delete "${selectedBoard.config.boardName}"?`
-                );
-                if (!confirmDelete) return;
-
-                const updatedBoards = prevBoards.filter(
-                  (b) => b.boardId !== selectedBoard.boardId
-                );
-                localStorage.setItem("boards", JSON.stringify(updatedBoards));
-                setPrevBoards(updatedBoards);
-                setSelectedBoard(undefined);
+                if (confirm(`Delete "${selectedBoard.config.boardName}"?`)) {
+                  const updatedBoards = prevBoards.filter(b => b.boardId !== selectedBoard.boardId);
+                  localStorage.setItem("boards", JSON.stringify(updatedBoards));
+                  setPrevBoards(updatedBoards);
+                  setSelectedBoard(undefined);
+                }
               }}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 uppercase border-2 border-red-400 transition-all duration-200"
+              className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-3 uppercase border border-red-500/30 transition-all duration-300"
             >
               Delete Board
             </button>
@@ -282,7 +324,7 @@ function CreateBoard() {
             setShowPrevBoards(false);
             setSelectedBoard(undefined);
           }}
-          className="w-full mt-4 bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-800 transition-all duration-200"
+          className="w-full mt-4 bg-transparent hover:bg-gray-700/30 text-white font-bold py-3 text-sm border-2 border-gray-600 hover:border-gray-500 transition-all duration-300"
         >
           Cancel
         </button>
@@ -290,203 +332,199 @@ function CreateBoard() {
     </div>
   );
 
-  const renderPaymentQR = () => {
-    return (
-      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-        <div className="bg-black border-4 border-yellow-400 p-6 max-w-md w-full">
-          <h2 className="text-yellow-300 font-bold text-xl mb-4">
-            Premium Board Payment
-          </h2>
-          <p className="text-white mb-4">
-            Zap{" "}
-            <span className="text-yellow-300 font-bold">{PREMIUM_AMOUNT}</span>{" "}
-            to{" "}
-            <span className="text-green-400 font-mono">
-              {PREMIUM_LIGHTNING_ADDRESS}
-            </span>
-          </p>
-
-          <div className="bg-white p-4 mb-4">
-            <QRCodeSVG
-              value={premiumInvoice}
-              size={220}
-              level="M"
-              className="mx-auto"
-              style={{ width: "100%", height: "auto" }}
-            />
-          </div>
-
-          <div className="mb-4 p-3 bg-gray-900 border border-yellow-400 rounded break-all text-xs text-white font-mono">
-            {premiumInvoice}
-          </div>
-
-          {isWaitingPayment && (
-            <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-400 rounded">
-              <p className="text-yellow-300 text-center animate-pulse">
-                ⚡ Waiting for payment confirmation...
-              </p>
-            </div>
-          )}
-
-          {isPaid && (
-            <div className="mb-4 p-3 bg-green-900/30 border border-green-400 rounded">
-              <p className="text-green-400 text-center font-bold">
-                ✓ Payment Confirmed!
-              </p>
-            </div>
-          )}
-
-          <button
-            onClick={() => {
-              setShowPaymentQR(false);
-              setIsExplorable(false);
-              setIsLoggedIn(false);
-              setIsPaid(false);
-            }}
-            className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-800 transition-all duration-200"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-black p-8 flex items-center justify-center">
-      <div className="w-full h-full max-w-5xl mx-auto">
-        <RetroFrame className="h-full">
-          <div className="max-w-lg w-full mx-auto p-8">
-            <h2 className="text-3xl font-bold text-yellow-400 mb-6 uppercase">
-              Create Your Board
-            </h2>
+    <div className="min-h-screen bg-blackish relative overflow-hidden">
+      <div className="relative z-10 px-4 sm:px-6 md:px-8 lg:px-12 py-8 sm:py-12 md:py-16 lg:py-20">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8 sm:mb-10 md:mb-12">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 text-white">
+              Set Up Your <span className="text-yellow-text/90">Board</span>
+            </h1>
+            <p className="text-sm sm:text-base md:text-lg text-gray-400 max-w-2xl mx-auto">
+              Create a live message board in seconds
+            </p>
+          </div>
 
-            <div className="space-y-6">
+          {/* Main Form Card */}
+          <div className="card-style p-6 sm:p-8 md:p-10 lg:p-12 mb-6 sm:mb-8">
+            <form
+              onSubmit={e => e.preventDefault()}
+              className="space-y-6 sm:space-y-7 md:space-y-8"
+            >
+              {/* Board Name */}
               <div>
-                <label className="block text-yellow-300 mb-2 font-bold">
+                <label className="block text-white font-bold mb-2 sm:mb-3 text-sm sm:text-base md:text-lg">
                   Board Name
+                  <span className="text-yellow-text/90 ml-1">*</span>
                 </label>
                 <input
                   type="text"
                   value={boardName}
-                  onChange={(e) => setBoardName(e.target.value)}
+                  onChange={e => setBoardName(e.target.value)}
                   placeholder="Bitcoin Conference Q&A"
-                  className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-green-400"
+                  className="w-full px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 bg-blackish text-white placeholder-gray-600 border-2 border-border-purple focus:border-yellow-text/80 focus:outline-none transition-colors text-sm sm:text-base md:text-lg"
                 />
-              </div>
-
-              <div>
-                <label className="block text-yellow-300 mb-2 font-bold">
-                  Lightning Address
-                </label>
-                <input
-                  type="text"
-                  value={lightningAddress}
-                  onChange={(e) => setLightningAddress(e.target.value)}
-                  placeholder="you@getalby.com"
-                  className="w-full px-4 py-3 bg-black text-white placeholder-gray-400 border-2 border-yellow-400 focus:outline-none focus:border-green-400"
-                />
-                <p className="text-gray-400 text-sm mt-1">
-                  Where zaps will be received
+                <p className="text-gray-500 text-xs sm:text-sm mt-2">
+                  Choose a descriptive name for your board
                 </p>
               </div>
 
+              {/* Lightning Address */}
               <div>
-                <label className="block text-yellow-300 mb-2 font-bold">
+                <label className="block text-white font-bold mb-2 sm:mb-3 text-sm sm:text-base md:text-lg">
+                  Lightning Address
+                  <span className="text-yellow-text/90 ml-1">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={lightningAddress}
+                    onChange={e => setLightningAddress(e.target.value)}
+                    placeholder="zapit@coinos.io"
+                    className="w-full px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 bg-blackish text-white placeholder-gray-600 border-2 border-border-purple focus:border-yellow-text/80 focus:outline-none transition-colors text-sm sm:text-base md:text-lg font-mono"
+                  />
+                  <BsLightning className="absolute right-4 top-1/2 -translate-y-1/2 text-yellow-text/50 text-lg sm:text-xl md:text-2xl" />
+                </div>
+                <p className="text-gray-500 text-xs sm:text-sm mt-2">
+                  Where you'll receive zap payments
+                </p>
+              </div>
+
+              {/* Minimum Zap Amount */}
+              <div>
+                <label className="block text-white font-bold mb-2 sm:mb-3 text-sm sm:text-base md:text-lg">
                   Minimum Zap Amount (sats)
+                  <span className="text-yellow-text/90 ml-1">*</span>
                 </label>
                 <input
                   type="number"
                   value={minZapAmount}
-                  onChange={(e) => setMinZapAmount(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-black text-white border-2 border-yellow-400 focus:outline-none focus:border-green-400"
+                  onChange={e => setMinZapAmount(Number(e.target.value))}
+                  min="1"
+                  className="w-full px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 bg-blackish text-white border-2 border-border-purple focus:border-yellow-text/80 focus:outline-none transition-colors text-sm sm:text-base md:text-lg"
                 />
+                <p className="text-gray-500 text-xs sm:text-sm mt-2">
+                  Minimum amount users must zap to send a message
+                </p>
               </div>
 
               {/* Explorable Toggle */}
-              <div className="bg-black border-2 border-yellow-400 p-4">
-                <div className="flex items-center justify-between">
+              <div className="card-style p-4 sm:p-5 md:p-6 border-violet-300/20">
+                <div className="flex items-start gap-4">
                   <div className="flex-1">
-                    <label className="text-yellow-300 font-bold">
-                      Make Board Explorable
-                    </label>
-                    <p className="text-gray-400 text-sm mt-1">
-                      {PREMIUM_AMOUNT} sats - List publicly for discovery on
-                      explore section
-                    </p>
+                    <div className="flex items-center gap-2 mb-2">
+                      <MdVerified className="text-yellow-text/90 text-lg sm:text-xl md:text-2xl" />
+                      <label className="text-white font-bold text-sm sm:text-base md:text-lg">
+                        Make Board Explorable (Premium)
+                      </label>
+                    </div>
 
-                    {isLoggedIn && isVerifyingEligibility && (
-                      <p className="text-yellow-400 text-sm mt-1">
-                        Verifying eligibility...
+                    <div className="mb-3 p-3 ">
+                      <p className="text-violet-300 font-semibold text-xs md:text-base mb-2">
+                        Eligibility Requirements:
                       </p>
-                    )}
+                      <ul className="text-gray-400 text-xs md:text-base space-y-1">
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-text/90 shrink-0">•</span>
+                          <span>NIP-05 identified</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-text/90 shrink-0">•</span>
+                          <span>10+ following on Nostr</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-yellow-text/90 shrink-0">•</span>
+                          <span>Pay for premium features</span>
+                        </li>
+                      </ul>
+                    </div>
 
+                    {/* Status Messages */}
                     {isLoggedIn && isEligible && !isPaid && (
-                      <p className="text-yellow-400 text-sm mt-1">
-                        Payment required
-                      </p>
+                      <div className="flex items-center gap-2 text-yellow-text/90 text-xs sm:text-sm">
+                        <BsShieldCheck />
+                        <span>Payment required</span>
+                      </div>
                     )}
-
+                    {isVerifyingEligibility && (
+                      <div className="flex items-center gap-2 text-yellow-text/90 text-xs sm:text-sm">
+                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-yellow-text/90 border-t-transparent"></div>
+                        <span>Verifying eligibility...</span>
+                      </div>
+                    )}
                     {isPaid && (
-                      <p className="text-green-400 text-sm mt-1">
-                        ✓ Payment confirmed
-                      </p>
+                      <div className="flex items-center gap-2 text-green-400 text-xs sm:text-sm">
+                        <BsShieldCheck />
+                        <span>✓ Payment confirmed</span>
+                      </div>
                     )}
-
                     {eligibilityError && (
-                      <p className="text-red-400 text-sm mt-1">
-                        {eligibilityError}
-                      </p>
+                      <div className="flex items-start gap-2 text-red-400 text-xs sm:text-sm">
+                        <FiInfo className="shrink-0 mt-0.5" />
+                        <span>{eligibilityError}</span>
+                      </div>
                     )}
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer ml-4">
+
+                  {/* Toggle Switch */}
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
                     <input
                       type="checkbox"
                       checked={isExplorable}
-                      onChange={(e) => handleExplorableToggle(e.target.checked)}
+                      onChange={e => handleExplorableToggle(e.target.checked)}
                       disabled={isVerifyingEligibility || isExplorable}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500 peer-disabled:opacity-50"></div>
+                    <div className="w-11 h-6 sm:w-14 sm:h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-yellow-text/90 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 sm:after:h-6 sm:after:w-6 after:transition-all peer-checked:bg-yellow-text/90 peer-disabled:opacity-50"></div>
                   </label>
                 </div>
               </div>
 
+              {/* Error Message */}
               {error && (
-                <div className="bg-red-900/50 border-2 border-red-500 p-3">
-                  <p className="text-red-400 text-sm">{error}</p>
+                <div className="p-3 sm:p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs sm:text-sm">
+                  {error}
                 </div>
               )}
 
-              <button
-                onClick={handleCreateBoard}
-                disabled={isCreating || !isCreateButtonEnabled()}
-                className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-700 disabled:border-gray-600 disabled:cursor-not-allowed disabled:text-gray-500 text-black font-bold py-3 uppercase border-2 border-yellow-300 transition-all duration-200"
-              >
-                {isCreating ? "Creating..." : "Create Board"}
-              </button>
-
-              {prevBoards.length > 0 && (
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={() => setShowPrevBoards(true)}
-                  className="w-full bg-black border-2 border-yellow-400 text-yellow-300 font-bold py-3 uppercase hover:bg-gray-800 transition-all duration-200"
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="flex-1 bg-transparent hover:bg-gray-700/30 text-white font-bold py-3 sm:py-4 md:py-5 px-6 sm:px-8 text-sm sm:text-base md:text-lg uppercase tracking-wide border-2 border-gray-600 hover:border-gray-500 transition-all duration-300"
                 >
-                  Use Previous Board
+                  Cancel
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={handleCreateBoard}
+                  disabled={isCreating || !isCreateButtonEnabled()}
+                  className="flex-1 bg-yellow-text/90 hover:bg-yellow-text disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-blackish font-bold py-3 sm:py-4 md:py-5 px-6 sm:px-8 text-sm sm:text-base md:text-lg uppercase tracking-wide transition-all duration-300 hover:shadow-[0_0_40px_rgba(255,223,32,0.3)] transform hover:scale-[1.02] disabled:transform-none disabled:shadow-none"
+                >
+                  {isCreating ? "Creating..." : "Create Board"}
+                </button>
+              </div>
+            </form>
           </div>
-        </RetroFrame>
+
+          {/* Previous Boards Button */}
+          {prevBoards.length > 0 && (
+            <button
+              onClick={() => setShowPrevBoards(true)}
+              className="w-full bg-transparent hover:bg-gray-700/30 text-white font-bold py-3 text-sm border-2 border-gray-600 hover:border-gray-500 transition-all duration-300"
+            >
+              Use Previous Board ({prevBoards.length})
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Modals */}
       {showLoginOverlay && (
-        <NostrLoginOverlay
-          onSuccess={handleLoginSuccess}
-          onClose={handleLoginClose}
-        />
+        <NostrLoginOverlay onSuccess={handleLoginSuccess} onClose={handleLoginClose} />
       )}
-
       {showPrevBoards && renderPreviousBoardsModal()}
       {showPaymentQR && renderPaymentQR()}
     </div>

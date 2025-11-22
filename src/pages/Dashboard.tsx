@@ -48,7 +48,7 @@ function Dashboard() {
     try {
       const nwc = await createNWCInstance(nwcStr);
       const info = await nwc.getInfo();
-      console.log(info)
+      console.log(info);
 
       setNwcConnected(true);
       setShowNwcInput(false);
@@ -94,9 +94,7 @@ function Dashboard() {
           >
             ◀ Back
           </button>
-          <h1 className="text-4xl font-bold mb-2 text-yellow-300">
-            {boardConfig.boardName}
-          </h1>
+          <h1 className="text-4xl font-bold mb-2 text-yellow-300">{boardConfig.boardName}</h1>
           <p className="text-yellow-500">
             Created {new Date(boardConfig.createdAt).toLocaleDateString()}
           </p>
@@ -105,9 +103,7 @@ function Dashboard() {
         {/* NWC Connection */}
         {showNwcInput && (
           <RetroFrame className="mb-6 border-solid">
-            <h3 className="text-yellow-300 font-bold mb-2">
-              Connect Your Wallet
-            </h3>
+            <h3 className="text-yellow-300 font-bold mb-2">Connect Your Wallet</h3>
             <p className="text-yellow-500 text-sm mb-4">
               Enter your NWC string to start receiving zaps
             </p>
@@ -116,7 +112,7 @@ function Dashboard() {
               <input
                 type="password"
                 value={nwcString}
-                onChange={(e) => setNwcString(e.target.value)}
+                onChange={e => setNwcString(e.target.value)}
                 placeholder="nostr+walletconnect://..."
                 className="flex-1 px-4 py-3 rounded bg-black border border-yellow-500 text-yellow-200 placeholder-yellow-700 focus:outline-none focus:border-yellow-400"
               />
@@ -142,9 +138,7 @@ function Dashboard() {
         {/* Board URLs */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           <RetroFrame className="flex flex-col justify-between h-full">
-            <h3 className="text-yellow-300 font-bold mb-2">
-              Public Display Link
-            </h3>
+            <h3 className="text-yellow-300 font-bold mb-2">Public Display Link</h3>
             <p className="text-yellow-500 text-sm mb-4">
               Share this on screen/projector for audience
             </p>

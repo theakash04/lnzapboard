@@ -5,10 +5,7 @@ interface RetroFrameProps {
   className?: string;
 }
 
-export default function RetroFrame({
-  children,
-  className = "",
-}: RetroFrameProps) {
+export default function RetroFrame({ children, className = "" }: RetroFrameProps) {
   return (
     <div className=" bg-black p-10">
       <div

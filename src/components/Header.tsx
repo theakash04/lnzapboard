@@ -7,10 +7,7 @@ export default function Header() {
   return (
     <header className="bg-blackish border-b-2 border-yellow-500/20 p-4">
       <div className="w-full mx-auto flex items-center justify-between px-8">
-        <div
-          onClick={() => navigate("/")}
-          className="flex items-center gap-3 cursor-pointer group"
-        >
+        <div onClick={() => navigate("/")} className="flex items-center gap-3 cursor-pointer group">
           <img
             src="/lnzapboard-logo.png"
             alt="lnzapboard logo"

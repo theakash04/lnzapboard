@@ -55,12 +55,11 @@ function Pricing() {
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl proj:text-9xl font-bold mb-4 sm:mb-6 text-white">
+            <h1 className="text-3xl sm:max-md:text-xl md:max-lg:text-4xl lg:max-proj:text-6xl proj:text-7xl font-bold mb-4 sm:mb-6 text-white">
               Choose Your <span className="text-yellow-text">Plan</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl proj:text-4xl text-gray-400 max-w-3xl mx-auto">
-              Start for free or upgrade to Premium for advanced features and
-              visibility
+              Start for free or upgrade to Premium for advanced features and visibility
             </p>
           </div>
 
@@ -110,11 +109,7 @@ function Pricing() {
                     ) : (
                       <BsX className="text-gray-700 shrink-0 text-xl sm:text-2xl proj:text-4xl mt-1" />
                     )}
-                    <span
-                      className={
-                        feature.basic ? "text-gray-400" : "text-gray-700"
-                      }
-                    >
+                    <span className={feature.basic ? "text-gray-400" : "text-gray-700"}>
                       {feature.name}
                     </span>
                   </div>

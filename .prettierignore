@@ -1,0 +1,17 @@
+# Node modules and dependencies
+node_modules
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build output
+dist
+
+# Environment and logs
+.env
+.env.* 
+*.log
+
+# Other ignores
+coverage
+public/assets

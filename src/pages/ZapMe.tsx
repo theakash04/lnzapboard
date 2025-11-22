@@ -1,177 +1,179 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { FaCopy, FaBitcoin } from "react-icons/fa";
-import { BsLightning } from "react-icons/bs";
+import { FaCopy } from "react-icons/fa";
+import { BsLightning, BsShieldCheck } from "react-icons/bs";
+import { SiBitcoin } from "react-icons/si";
+import { RiSecurePaymentLine } from "react-icons/ri";
+import { BiWorld } from "react-icons/bi";
 
 function ZapMe() {
-  const [showOnChain, setShowOnChain] = useState(true);
+  const [showOnChain, setShowOnChain] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedNpub, setCopiedNpub] = useState(false);
 
   const LIGHTNING_ADDRESS = "mist@coinos.io";
   const BITCOIN_ADDRESS = "bc1q6cxtna4zdqh999q06v3dhhafcnk9s6kavw8wut";
+  const NPUB = "npub1kuzk93p4mea2yxehddet03szwx2h4uw3wqz3ehvqrwj9ssd0tetqs5adr6";
 
-  const handleCopy = (text: string) => {
+  const handleCopy = (text: string, type: "address" | "npub") => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    if (type === "address") {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } else {
+      setCopiedNpub(true);
+      setTimeout(() => setCopiedNpub(false), 2000);
+    }
   };
-
-  const handleNpubCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedNpub(true);
-    setTimeout(() => setCopiedNpub(false), 1500);
-  };
-
-  const NPUB =
-    "npub1kuzk93p4mea2yxehddet03szwx2h4uw3wqz3ehvqrwj9ssd0tetqs5adr6";
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <div className="max-w-lg w-full mx-auto">
+    <div className="min-h-screen bg-blackish flex items-center justify-center p-4 sm:p-6">
+      <div className="max-w-lg w-full">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-yellow-400 mb-4">
-            Support Open Source Tech
-          </h1>
-          <p className="text-white/70 text-lg leading-snug px-10">
-            Your support motivates me to keep building cool, open,
-            freedom-focused technology. Together, we can make peer-to-peer the
-            default.
+          <div className="inline-flex items-center gap-2 px-4 py-2 mb-4 sm:mb-6 border border-violet-300/20 bg-violet-300/5 backdrop-blur-sm text-violet-300 text-xs sm:text-sm uppercase tracking-wider">
+            <BsLightning className="text-yellow-text" />
+            <span>Support Open Source Tech</span>
+          </div>
+          <p className="text-sm sm:text-base text-gray-400 leading-relaxed max-w-md mx-auto">
+            Your support motivates me to keep building cool, open, freedom-focused technology.
+            Together, we can make peer-to-peer the default.
           </p>
         </div>
 
         {/* Main Card */}
-        <div className="bg-black border-2 border-yellow-500 p-6 rounded-lg shadow-[0_0_20px_rgba(255,255,0,0.1)]">
-          <div className="text-center mb-4">
-            <div className="inline-block text-5xl text-yellow-400 mb-2">
-              <FaBitcoin />
+        <div className="card-style p-6 sm:p-8">
+          {/* Bitcoin Logo */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 mb-3 rounded-full bg-yellow-text/10">
+              <SiBitcoin className="text-4xl sm:text-5xl text-yellow-text" />
             </div>
-            <h2 className="text-xl font-bold text-white mb-1">Bitcoin Only</h2>
-            <p className="text-white/70 text-xs leading-snug text-center flex justify-center gap-1">
-              <span className="text-white/60">
-                No Stripe, No Paypal, No credit cards, Just peer-to-peer
-                electronic cash
-              </span>
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Bitcoin Only</h2>
+            <p className="text-xs sm:text-sm text-gray-500">
+              No Stripe, No PayPal. Just peer-to-peer electronic cash.
             </p>
           </div>
 
           {/* Toggle Buttons */}
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setShowOnChain(true)}
-              className={`flex-1 py-2 text-sm font-bold border-2 transition-all ${
-                showOnChain
-                  ? "bg-yellow-400 text-black border-yellow-300"
-                  : "bg-black/50 text-white/70 border-yellow-500/30 hover:border-yellow-500/50"
-              }`}
-            >
-              <FaBitcoin className="inline mr-1" />
-              On-Chain
-            </button>
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               onClick={() => setShowOnChain(false)}
-              className={`flex-1 py-2 text-sm font-bold border-2 transition-all ${
+              className={`py-3 px-4 text-sm font-bold transition-all duration-300 ${
                 !showOnChain
-                  ? "bg-yellow-400 text-black border-yellow-300"
-                  : "bg-black/50 text-white/70 border-yellow-500/30 hover:border-yellow-500/50"
+                  ? "bg-yellow-text text-blackish"
+                  : "bg-transparent text-gray-500 border-2 border-border-purple hover:border-violet-300/30"
               }`}
             >
-              <BsLightning className="inline mr-1" />
+              <BsLightning className="inline mr-2" />
               Lightning
+            </button>
+            <button
+              onClick={() => setShowOnChain(true)}
+              className={`py-3 px-4 text-sm font-bold transition-all duration-300 ${
+                showOnChain
+                  ? "bg-yellow-text text-blackish"
+                  : "bg-transparent text-gray-500 border-2 border-border-purple hover:border-violet-300/30"
+              }`}
+            >
+              <SiBitcoin className="inline mr-2" />
+              On-Chain
             </button>
           </div>
 
           {/* Address Display */}
           <div className="mb-4">
-            <div className="text-center text-yellow-400 text-xs uppercase tracking-wide mb-1">
+            <div className="text-center text-yellow-text/80 text-xs uppercase tracking-wider mb-2 font-bold">
               {showOnChain ? "Bitcoin Address" : "Lightning Address"}
             </div>
-            <div className="bg-black border border-yellow-500/40 p-3 rounded text-center">
-              <code className="text-yellow-400 text-sm  font-mono break-all">
+            <div className="bg-blackish border border-border-purple p-3 mb-3">
+              <code className="text-yellow-text text-xs sm:text-sm font-mono break-all block text-center">
                 {showOnChain ? BITCOIN_ADDRESS : LIGHTNING_ADDRESS}
               </code>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 mb-4">
             <button
               onClick={() =>
-                handleCopy(showOnChain ? BITCOIN_ADDRESS : LIGHTNING_ADDRESS)
+                handleCopy(showOnChain ? BITCOIN_ADDRESS : LIGHTNING_ADDRESS, "address")
               }
-              className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 border-2 border-yellow-300 transition-all flex items-center justify-center gap-2 text-sm"
+              className="w-full bg-yellow-text hover:bg-yellow-text/90 text-blackish font-bold py-3 text-sm uppercase transition-all duration-300 flex items-center justify-center gap-2"
             >
               <FaCopy />
-              {copied ? "Copied!" : "Copy"}
+              {copied ? "Copied!" : "Copy Address"}
             </button>
           </div>
 
           {/* QR Code */}
-          <div className="bg-white p-4 mb-4 flex justify-center rounded">
-            <QRCodeSVG
-              value={showOnChain ? BITCOIN_ADDRESS : LIGHTNING_ADDRESS}
-              size={160}
-              level="M"
-              className="mx-auto"
-            />
+          <div className="flex justify-center mb-6">
+            <div className="bg-white p-4">
+              <QRCodeSVG
+                value={showOnChain ? BITCOIN_ADDRESS : LIGHTNING_ADDRESS}
+                size={180}
+                level="M"
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
+            </div>
           </div>
 
           {/* Nostr Section */}
-          <div className="border border-yellow-500/30 p-3 rounded-lg mb-6 relative">
-            <h3 className="text-center text-yellow-400 font-bold text-sm uppercase mb-2">
+          <div className="border-t border-border-purple pt-6 mb-6">
+            <h3 className="text-center text-violet-300 font-bold text-sm uppercase tracking-wider mb-3">
               Find Me on Nostr
             </h3>
 
-            <div className="bg-black border border-yellow-500/40 p-3 rounded text-center relative">
-              <code className="text-purple-300 text-sm font-mono break-all">
+            <div className="bg-blackish border border-border-purple p-3 relative group">
+              <code className="text-violet-300/90 text-xs font-mono break-all block text-center pr-8">
                 {NPUB}
               </code>
 
-              {/* Subtle Copy Icon (top-right corner) */}
               <button
-                onClick={() => handleNpubCopy(NPUB)}
-                className="absolute bottom-2 right-2 text-purple-400 hover:text-purple-300 transition-colors"
+                onClick={() => handleCopy(NPUB, "npub")}
+                className="absolute top-2 right-2 text-violet-300/50 hover:text-violet-300 transition-colors"
                 title="Copy npub"
               >
-                <FaCopy size={14} />
+                <FaCopy className="text-sm" />
               </button>
             </div>
 
-            {copiedNpub && (
-              <div className="text-center text-xs text-purple-400 mt-1">
-                Copied!
-              </div>
-            )}
+            {copiedNpub && <div className="text-center text-xs text-violet-300 mt-2">Copied!</div>}
           </div>
 
           {/* Why Bitcoin Section */}
-          <div className="border-t border-yellow-500/30 pt-4">
-            <h3 className="text-center text-yellow-400 font-bold text-sm mb-3 uppercase">
+          <div className="border-t border-border-purple pt-6">
+            <h3 className="text-center text-white font-bold text-base uppercase tracking-wider mb-4">
               Why Bitcoin?
             </h3>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div>
-                <div className="text-yellow-400 font-bold mb-0.5">
-                  No Censorship
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-yellow-text/10">
+                  <RiSecurePaymentLine className="text-xl sm:text-2xl text-yellow-text" />
                 </div>
-                <div className="text-white/70">Can’t be blocked</div>
+                <div className="text-yellow-text font-bold text-xs mb-1">No Censorship</div>
+                <div className="text-gray-500 text-xs">Can't be blocked</div>
               </div>
-              <div>
-                <div className="text-yellow-400 font-bold mb-0.5">No KYC</div>
-                <div className="text-white/70">Private</div>
+
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-yellow-text/10">
+                  <BsShieldCheck className="text-xl sm:text-2xl text-yellow-text" />
+                </div>
+                <div className="text-yellow-text font-bold text-xs mb-1">No KYC</div>
+                <div className="text-gray-500 text-xs">Private</div>
               </div>
-              <div>
-                <div className="text-yellow-400 font-bold mb-0.5">Global</div>
-                <div className="text-white/70">Works anywhere</div>
+
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 mb-2 rounded-full bg-yellow-text/10">
+                  <BiWorld className="text-xl sm:text-2xl text-yellow-text" />
+                </div>
+                <div className="text-yellow-text font-bold text-xs mb-1">Global</div>
+                <div className="text-gray-500 text-xs">Works anywhere</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer Quote */}
-        <div className="text-center mt-6 text-white/50 italic text-sm">
-          "Be Free."
+        {/* Footer */}
+        <div className="text-center mt-6">
+          <p className="text-gray-500 italic text-sm">"Be Free."</p>
         </div>
       </div>
     </div>
