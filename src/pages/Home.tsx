@@ -64,7 +64,7 @@ function Home() {
                   Instant Setup
                 </h3>
                 <p className="text-gray-500 text-xs sm:text-sm md:text-base proj:text-2xl leading-relaxed">
-                  Paste your NWC connection and you're live in seconds
+                  Paste your lighting address and you're live in seconds
                 </p>
               </div>
             </div>
