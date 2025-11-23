@@ -1,7 +1,6 @@
 import { BsCheck, BsX, BsLightning } from "react-icons/bs";
 import { FiZap } from "react-icons/fi";
-import { AiOutlineLink } from "react-icons/ai";
-import { MdVerified } from "react-icons/md";
+import { MdSettings, MdVerified } from "react-icons/md";
 import { BiGlobe } from "react-icons/bi";
 import { useNavigate } from "react-router";
 
@@ -36,17 +35,23 @@ function Pricing() {
       premium: true,
       icon: <BiGlobe className="inline ml-1 text-yellow-text" />,
     },
+    // {
+    //   name: "Custom Board URL",
+    //   basic: false,
+    //   premium: true,
+    // },
+    // {
+    //   name: "Short Shareable URL",
+    //   basic: false,
+    //   premium: true,
+    //   icon: <AiOutlineLink className="inline ml-1 text-yellow-text" />,
+    // },
     {
-      name: "Custom Board URL",
+      name: "Access to Settings",
       basic: false,
       premium: true,
-    },
-    {
-      name: "Short Shareable URL",
-      basic: false,
-      premium: true,
-      icon: <AiOutlineLink className="inline ml-1 text-yellow-text" />,
-    },
+      icon: <MdSettings className="inline ml-1 text-yellow-text" />,
+    }
   ];
 
   return (
