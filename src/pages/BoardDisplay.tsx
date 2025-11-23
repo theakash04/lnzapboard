@@ -18,6 +18,7 @@ import { verifyUserEligibility } from "../libs/nostr";
 import { generatePremiumInvoice, monitorPremiumPayment, PREMIUM_AMOUNT } from "../libs/payments";
 import { FaCheck, FaCopy } from "react-icons/fa";
 import { FiInfo } from "react-icons/fi";
+import { safeLocalStorage } from "../libs/safeStorage";
 
 const RANK_COLORS = [
   {
@@ -79,7 +80,7 @@ export default function BoardDisplay() {
           // NEW: Check if this board can be upgraded
           checkCanUpgrade(boardId, config);
         } else {
-          const boards = JSON.parse(localStorage.getItem("boards") || "[]");
+          const boards = JSON.parse(safeLocalStorage.getItem("boards") || "[]");
           const board = boards.find((b: any) => b.boardId === boardId);
           if (board) {
             setBoardConfig(board.config);
@@ -99,9 +100,9 @@ export default function BoardDisplay() {
     loadBoard();
   }, [boardId]);
 
-  // NEW: Check if board can be upgraded (exists in localStorage AND not explorable)
+  // Check if board can be upgraded (exists in safeLocalStorage && not explorable)
   const checkCanUpgrade = (boardId: string, config: BoardConfig) => {
-    const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
+    const boards: StoredBoard[] = JSON.parse(safeLocalStorage.getItem("boards") || "[]");
     const ownedBoard = boards.find(b => b.boardId === boardId);
 
     if (ownedBoard && !config.isExplorable) {
@@ -264,13 +265,13 @@ export default function BoardDisplay() {
       // privateKey = null means use window.nostr to sign
       await publishBoardConfig(updatedConfig, null, true);
 
-      // Update localStorage
-      const boards: StoredBoard[] = JSON.parse(localStorage.getItem("boards") || "[]");
+      // Update safeLocalStorage
+      const boards: StoredBoard[] = JSON.parse(safeLocalStorage.getItem("boards") || "[]");
       const boardIndex = boards.findIndex(b => b.boardId === boardId);
 
       if (boardIndex !== -1) {
         boards[boardIndex].config = updatedConfig;
-        localStorage.setItem("boards", JSON.stringify(boards));
+        safeLocalStorage.setItem("boards", JSON.stringify(boards));
       }
 
       // Update local state
