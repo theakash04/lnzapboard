@@ -617,11 +617,11 @@ export default function BoardDisplay() {
               >
                 <QRCodeSVG
                   value={`${window.location.origin}/pay/${boardId}`}
-                  size={window.innerWidth < 640 ? 180 : window.innerWidth < 2000 ? 290 : 600}
+                  size={window.innerWidth < 640 ? 180 : window.innerWidth < 2000 ? 290 : 1000}
                   level="M"
                   bgColor="#ffffff"
                   fgColor="#000000"
-                  className="mx-auto border-2 border-white"
+                  className="mx-auto border-5 border-white"
                 />
               </a>
               <div className="text-yellow-300 mt-3 proj:text-3xl">
