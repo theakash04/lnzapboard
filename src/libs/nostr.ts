@@ -415,7 +415,6 @@ export async function getProfileNip05(hexPubkey: string): Promise<string | null>
 
   try {
     const meta = JSON.parse(events[0].content);
-    console.log(meta.nip05);
     return meta.nip05 ?? null;
   } catch {
     return null;
