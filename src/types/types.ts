@@ -6,6 +6,7 @@ export interface BoardConfig {
   creatorPubkey: string;
   nip05Identifier?: string;
   isExplorable?: boolean;
+  logoUrl?: string;
   createdAt: number;
 }
 

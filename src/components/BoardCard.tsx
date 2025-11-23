@@ -67,11 +67,23 @@ export default function BoardCard({ board, onClick }: BoardCardProps) {
             <p className="text-xs text-gray-500">{formatDate(board.createdAt)}</p>
           </div>
 
-          <div className="shrink-0 ml-3">
-            <div className="w-10 h-10 rounded-full bg-yellow-text/10 flex items-center justify-center group-hover:bg-yellow-text/20 transition-colors">
-              <BsLightning className="text-yellow-text/90 text-lg" />
+          {/* Logo */}
+          {board.logoUrl ? (
+            <img
+              src={board.logoUrl}
+              alt={`${board.boardName} logo`}
+              className="w-16 h-16 proj:w-28 proj:h-28 object-contain rounded-md bg-white/10"
+              onError={e => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div className="shrink-0 ml-3">
+              <div className="w-10 h-10 rounded-full bg-yellow-text/10 flex items-center justify-center group-hover:bg-yellow-text/20 transition-colors">
+                <BsLightning className="text-yellow-text/90 text-lg" />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Stats */}

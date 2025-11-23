@@ -43,6 +43,7 @@ export async function publishBoardConfig(
       lightningAddress: config.lightningAddress,
       createdAt: config.createdAt,
       isExplorable: config.isExplorable,
+      logoUrl: config.logoUrl,
     }),
   };
   console.log("EVENT:", event);
@@ -61,9 +62,7 @@ export async function publishBoardConfig(
   await Promise.race([Promise.all(pubs), new Promise(resolve => setTimeout(resolve, 5000))]);
 }
 
-/**
- * Fetch board config from Nostr relays
- */
+// Fetch board config from Nostr relays
 export async function fetchBoardConfig(boardId: string): Promise<BoardConfig | null> {
   const pool = getPool();
 
@@ -98,6 +97,7 @@ export async function fetchBoardConfig(boardId: string): Promise<BoardConfig | n
             creatorPubkey: event.pubkey,
             createdAt: content.createdAt,
             isExplorable: content.isExplorable,
+            logoUrl: content.logoUrl
           };
           resolve(config);
         } catch (err) {
@@ -157,6 +157,7 @@ export async function fetchAllBoards(): Promise<BoardConfig[]> {
             creatorPubkey: event.pubkey,
             createdAt: content.createdAt,
             isExplorable: content.isExplorable,
+            logoUrl: content.logoUrl
           };
 
           boards.push(config);

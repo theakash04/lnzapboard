@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { QRCodeSVG } from "qrcode.react";
 import { fetchBoardConfig, subscribeToZapMessages, publishBoardConfig } from "../libs/nostr";
 import type { BoardConfig, ZapMessage, StoredBoard } from "../types/types";
@@ -12,7 +12,7 @@ import top3Sfx from "../assets/sounds/top3.wav";
 import Loading from "../components/Loading";
 import { BsLightning } from "react-icons/bs";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
-import { MdVerified } from "react-icons/md";
+import { MdSettings, MdVerified } from "react-icons/md";
 import NostrLoginOverlay from "../components/NostrLoginOverlay";
 import { verifyUserEligibility } from "../libs/nostr";
 import { generatePremiumInvoice, monitorPremiumPayment, PREMIUM_AMOUNT } from "../libs/payments";
@@ -42,6 +42,7 @@ const RANK_COLORS = [
 ];
 
 export default function BoardDisplay() {
+  const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const [boardConfig, setBoardConfig] = useState<BoardConfig | null>(null);
   const [messages, setMessages] = useState<ZapMessage[]>([]);
@@ -77,14 +78,14 @@ export default function BoardDisplay() {
         const config = await fetchBoardConfig(boardId);
         if (config) {
           setBoardConfig(config);
-          // NEW: Check if this board can be upgraded
+          // Check if this board can be upgraded
           checkCanUpgrade(boardId, config);
         } else {
           const boards = JSON.parse(safeLocalStorage.getItem("boards") || "[]");
           const board = boards.find((b: any) => b.boardId === boardId);
           if (board) {
             setBoardConfig(board.config);
-            // NEW: Check if this board can be upgraded
+            // Check if this board can be upgraded
             checkCanUpgrade(boardId, board.config);
           } else {
             setError("Board not found");
@@ -242,7 +243,7 @@ export default function BoardDisplay() {
     }
   };
 
-  // NEW: Publish updated board config with user's real pubkey and isExplorable=true
+  // Publish updated board config with user's real pubkey and isExplorable=true
   const upgradeToExplorable = async (userPubkey: string) => {
     if (!boardConfig || !boardId || !userPubkey) {
       console.error("Missing required data:", { boardConfig, boardId, userPubkey });
@@ -257,7 +258,7 @@ export default function BoardDisplay() {
       // Create new board config with user's real pubkey
       const updatedConfig: BoardConfig = {
         ...boardConfig,
-        creatorPubkey: userPubkey, // NEW: Replace ephemeral key with real user pubkey
+        creatorPubkey: userPubkey, // Replace ephemeral key with real user pubkey
         isExplorable: true,
       };
 
@@ -297,7 +298,7 @@ export default function BoardDisplay() {
     setEligibilityError("");
   };
 
-  // NEW: Handle cancel during payment
+  // Handle cancel during payment
   const handleCancelPayment = () => {
     setShowPaymentQR(false);
     setIsWaitingPayment(false);
@@ -455,10 +456,21 @@ export default function BoardDisplay() {
   return (
     <div className="min-h-screen bg-blackish p-6 lg:p-10">
       <div className="w-full mx-auto space-y-6">
-        {/* Board name + volume */}
+        {/* Board name + logo + volume + settings */}
         <div className="card-style p-4 flex sm:flex-row flex-col justify-between items-center gap-4">
           <h2 className="text-4xl lg:max-proj:text-4xl proj:text-8xl text-center w-full font-semibold text-yellow-300 flex items-center justify-center gap-2">
-            <div className=" flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2">
+              {/* Logo */}
+              {boardConfig.logoUrl && (
+                <img
+                  src={boardConfig.logoUrl}
+                  alt={`${boardConfig.boardName} logo`}
+                  className="w-20 h-16 proj:w-28 proj:h-24 object-contain rounded-lg bg-white/10"
+                  onError={e => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              )}
               <span className="animate-pulse">{boardConfig.boardName}</span>
               {boardConfig.isExplorable && (
                 <RiVerifiedBadgeFill className="text-xl proj:text-7xl text-violet-300" />
@@ -467,6 +479,16 @@ export default function BoardDisplay() {
           </h2>
 
           <div className="flex items-center gap-2">
+            {boardConfig.isExplorable && (
+              <button
+                onClick={() => navigate(`/settings/${boardId}`)}
+                className="text-gray-300 hover:text-yellow-text/90 opacity-90 hover:opacity-100 transition-all duration-300"
+                title="Board Settings"
+              >
+                <MdSettings size={24} />
+              </button>
+            )}
+
             <button
               onClick={() => {
                 const url = `${window.location.origin}/board/${boardId}`;
