@@ -34,10 +34,13 @@ function formatDate(timestamp: number): String {
 }
 
 export default function BoardCard({ board, onClick }: BoardCardProps) {
+  // remove this later, as boardConf will contain nip05 for new projects
   const [creatorName, setCreatorName] = useState<string | null>(null);
   useEffect(() => {
+    if (board.nip05Identifier) return;
     getProfileNip05(board.creatorPubkey).then(name => setCreatorName(name));
-  }, [board.creatorPubkey]);
+  }, [board.creatorPubkey, board.nip05Identifier]);
+  //
 
   return (
     <button
@@ -58,7 +61,9 @@ export default function BoardCard({ board, onClick }: BoardCardProps) {
               boardId: {board.boardId.slice(0, 8)}..
             </p>
 
-            <p className="lg:text-md text-violet-300/60 md:text-base mb-2">{creatorName}</p>
+            <p className="lg:text-md text-violet-300/60 md:text-base mb-2">
+              {board.nip05Identifier ?? creatorName}
+            </p>
             <p className="text-xs text-gray-500">{formatDate(board.createdAt)}</p>
           </div>
 

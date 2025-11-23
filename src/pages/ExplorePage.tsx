@@ -26,9 +26,15 @@ export default function ExploreBoards() {
   }, []);
 
   // Filter boards based on search query
-  const filteredBoards = boards.filter(board =>
-    board.boardName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBoards = boards.filter(board => {
+    const q = searchQuery.toLowerCase();
+
+    return (
+      board.boardName?.toLowerCase().includes(q) ||
+      board.boardId?.toLowerCase().includes(q) ||
+      board.creatorPubkey?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="min-h-screen bg-blackish relative overflow-hidden">

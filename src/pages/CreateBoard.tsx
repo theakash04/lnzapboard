@@ -22,6 +22,7 @@ function CreateBoard() {
   const [error, setError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [invoiceCopied, setInvoiceCopied] = useState(false);
+  const [nip05Identifier, setNip05Identifier] = useState("");
 
   // Explorable board state
   const [isExplorable, setIsExplorable] = useState(false);
@@ -80,6 +81,7 @@ function CreateBoard() {
 
       if (result.eligible) {
         setIsEligible(true);
+        setNip05Identifier(result.nip05 ?? "");
         showPaymentModal(boardId, pubkey);
       } else {
         setIsEligible(false);
@@ -169,6 +171,7 @@ function CreateBoard() {
         minZapAmount,
         lightningAddress,
         creatorPubkey: publicKey,
+        nip05Identifier: nip05Identifier,
         createdAt: Date.now(),
         isExplorable: isExplorable && isPaid,
       };

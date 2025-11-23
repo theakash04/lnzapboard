@@ -4,6 +4,7 @@ export interface BoardConfig {
   minZapAmount: number;
   lightningAddress: string;
   creatorPubkey: string;
+  nip05Identifier?: string;
   isExplorable?: boolean;
   createdAt: number;
 }
