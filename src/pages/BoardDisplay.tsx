@@ -49,13 +49,13 @@ export default function BoardDisplay() {
   const [prevLeaders, setPrevLeaders] = useState<string[]>([]);
   const [error, setError] = useState("");
 
-  const [volume, setVolume] = useState(0.2);
+  const [volume, setVolume] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const isLeaderboardSoundPlayingRef = useRef(false);
   const [highlightedRows, setHighlightedRows] = useState<string[]>([]);
   const [promotedUsers, setPromotedUsers] = useState<string[]>([]);
 
-  // NEW: States for making board explorable - cleaned up to only what's needed
+  // States for making board explorable
   const [canUpgrade, setCanUpgrade] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [showLoginOverlay, setShowLoginOverlay] = useState(false);
