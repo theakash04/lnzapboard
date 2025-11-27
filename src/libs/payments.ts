@@ -1,6 +1,7 @@
 import { DEFAULT_RELAYS, getPool } from "./nostr";
 import { type Filter, type Event } from "nostr-tools";
 import { generateInvoice, parseZapReceipt } from "./nip57";
+import { SLUG_PRICE } from "./slugService";
 
 export const PREMIUM_AMOUNT = import.meta.env.VITE_PREMIUM_AMOUNT;
 const PREMIUM_RECIPIENT_PUBKEY = import.meta.env.VITE_PREMIUM_RECIPIENT_PUBKEY;
@@ -153,4 +154,146 @@ export function getPremiumPaymentDetails() {
     recipient: PREMIUM_LIGHTNING_ADDRESS,
     amountMsats: PREMIUM_AMOUNT * 1000,
   };
+}
+
+// Generate Lightning payment for custom slug
+export async function generateSlugInvoice(boardId: string, slug: string, userPubkey: string) {
+  const message = `custom-slug-${boardId}-${slug}-${userPubkey.slice(0, 8)}`;
+  
+  const res = await generateInvoice({
+    lightningAddress: PREMIUM_LIGHTNING_ADDRESS,
+    amount: SLUG_PRICE,
+    message,
+    boardId,
+    recipientPubkey: PREMIUM_RECIPIENT_PUBKEY,
+  });
+  
+  if (!res) throw new Error("Failed to generate slug invoice");
+
+  return {
+    invoice: res.invoice,
+    hash: res.zapRequest.id, // Use zap request ID as payment hash
+  };
+}
+
+// Monitor for slug payment confirmation
+export function monitorSlugPayment(
+  boardId: string,
+  slug: string,
+  paymentHash: string,
+  onConfirmed: () => void,
+  onError: (error: string) => void
+): () => void {
+  const pool = getPool();
+  const seenIds = new Set<string>();
+
+  console.log("Monitoring for slug payment:", { boardId, slug, paymentHash });
+
+  const filter: Filter = {
+    kinds: [9735],
+    "#p": [PREMIUM_RECIPIENT_PUBKEY],
+    since: Math.floor(Date.now() / 1000),
+  };
+
+  const sub = pool.subscribeMany(DEFAULT_RELAYS, filter, {
+    onevent(event: Event) {
+      if (seenIds.has(event.id)) return;
+      seenIds.add(event.id);
+
+      try {
+        const zapInfo = parseZapReceipt(event);
+
+        if (!zapInfo) {
+          console.log("Could not parse zap receipt");
+          return;
+        }
+
+        // Check if amount is sufficient
+        if (zapInfo.amount < SLUG_PRICE) {
+          console.log("Payment amount too low:", zapInfo.amount);
+          return;
+        }
+
+        // Check if message matches slug payment pattern
+        const message = zapInfo.message.toLowerCase();
+        if (
+          message.includes(`custom-slug-${boardId.toLowerCase()}`) &&
+          message.includes(slug.toLowerCase())
+        ) {
+          console.log("Slug payment confirmed!", zapInfo);
+          onConfirmed();
+          sub.close();
+        }
+      } catch (error) {
+        console.error("Failed to process zap receipt:", error);
+      }
+    },
+  });
+
+  console.log("Monitoring slug payment for:", slug);
+
+  // Timeout after 5 minutes
+  const timeout = setTimeout(() => {
+    sub.close();
+    onError("Payment confirmation timeout - please try again");
+  }, 300000);
+
+  return () => {
+    clearTimeout(timeout);
+    sub.close();
+  };
+}
+
+// Verify if slug payment was made (check historical zaps)
+export async function verifySlugPayment(
+  boardId: string,
+  slug: string
+): Promise<boolean> {
+  const pool = getPool();
+
+  return new Promise(resolve => {
+    let found = false;
+    let sub: any;
+
+    const timeout = setTimeout(() => {
+      if (sub) sub.close();
+      resolve(found);
+    }, 5000);
+
+    const filter: Filter = {
+      kinds: [9735],
+      "#p": [PREMIUM_RECIPIENT_PUBKEY],
+      limit: 100,
+    };
+
+    sub = pool.subscribeMany(DEFAULT_RELAYS, filter, {
+      onevent(event: Event) {
+        try {
+          const zapInfo = parseZapReceipt(event);
+
+          if (!zapInfo) return;
+
+          if (zapInfo.amount < SLUG_PRICE) return;
+
+          const message = zapInfo.message.toLowerCase();
+          if (
+            message.includes(`custom-slug-${boardId.toLowerCase()}`) &&
+            message.includes(slug.toLowerCase())
+          ) {
+            found = true;
+            clearTimeout(timeout);
+            if (sub) sub.close();
+            resolve(true);
+          }
+        } catch (err) {
+          console.error("Error parsing zap:", err);
+        }
+      },
+      oneose() {
+        clearTimeout(timeout);
+        if (sub) sub.close();
+        resolve(found);
+      },
+    });
+  });
 }

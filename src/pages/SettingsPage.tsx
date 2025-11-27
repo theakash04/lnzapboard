@@ -9,6 +9,7 @@ import type { BoardConfig, StoredBoard } from "../types/types";
 import { safeLocalStorage } from "../libs/safeStorage";
 import NostrLoginOverlay from "../components/NostrLoginOverlay";
 import Loading from "../components/Loading";
+import CustomSlugSection from "../components/CustomSlugSection";
 
 export default function SettingsPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -355,6 +356,14 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        {/* Custom URL Section */}
+        <CustomSlugSection
+          boardId={boardId!}
+          userPubkey={userPubkey}
+          currentSlug={boardConfig.customSlug}
+          ></CustomSlugSection>
+                
 
         <div className="card-style p-8 border-2 border-red-500/30 mb-6">
           <h2 className="text-red-400 font-bold text-2xl mb-4 flex items-center gap-2">

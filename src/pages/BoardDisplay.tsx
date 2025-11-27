@@ -41,9 +41,10 @@ const RANK_COLORS = [
   },
 ];
 
-export default function BoardDisplay() {
+export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } = {}) {
   const navigate = useNavigate();
-  const { boardId } = useParams<{ boardId: string }>();
+  const { boardId: boardIdParam } = useParams<{ boardId: string }>();
+  const boardId = boardIdProp || boardIdParam;
   const [boardConfig, setBoardConfig] = useState<BoardConfig | null>(null);
   const [messages, setMessages] = useState<ZapMessage[]>([]);
   const [loading, setLoading] = useState(true);

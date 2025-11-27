@@ -44,7 +44,8 @@ export async function publishBoardConfig(
       createdAt: config.createdAt,
       isExplorable: config.isExplorable,
       logoUrl: config.logoUrl,
-    }),
+      customSlug: config.customSlug,
+    } as BoardConfig),
   };
   console.log("EVENT:", event);
 
@@ -97,6 +98,7 @@ export async function fetchBoardConfig(boardId: string): Promise<BoardConfig | n
             creatorPubkey: event.pubkey,
             createdAt: content.createdAt,
             isExplorable: content.isExplorable,
+            customSlug: content.customSlug,
             logoUrl: content.logoUrl
           };
           resolve(config);
@@ -157,6 +159,7 @@ export async function fetchAllBoards(): Promise<BoardConfig[]> {
             creatorPubkey: event.pubkey,
             createdAt: content.createdAt,
             isExplorable: content.isExplorable,
+            customSlug: content.customSlug,
             logoUrl: content.logoUrl
           };
 

@@ -7,6 +7,7 @@ export interface BoardConfig {
   nip05Identifier?: string;
   isExplorable?: boolean;
   logoUrl?: string;
+  customSlug?: string;
   createdAt: number;
 }
 
@@ -41,4 +42,21 @@ declare global {
   interface Window {
     nostr?: WindowNostr;
   }
+}
+
+export interface SlugReservation {
+  slug: string;
+  boardId: string;
+  userPubkey: string;
+  paymentHash: string;
+  amount: number;
+  reservedAt: number;
+  eventId: string;
+}
+
+
+export interface SlugAvailability {
+  available: boolean;
+  reason?: string;
+  existingReservation?: SlugReservation
 }
