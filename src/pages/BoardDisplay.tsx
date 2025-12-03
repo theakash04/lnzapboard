@@ -19,6 +19,9 @@ import { generatePremiumInvoice, monitorPremiumPayment, PREMIUM_AMOUNT } from ".
 import { FaCheck, FaCopy } from "react-icons/fa";
 import { FiInfo } from "react-icons/fi";
 import { safeLocalStorage } from "../libs/safeStorage";
+import { GiArmorUpgrade, GiConfirmed } from "react-icons/gi";
+import { IoWarning } from "react-icons/io5";
+import { HiMenu, HiX } from "react-icons/hi";
 
 const RANK_COLORS = [
   {
@@ -40,6 +43,32 @@ const RANK_COLORS = [
     light: "text-orange-100/70",
   },
 ];
+
+// helper
+const renderMessageWithLinks = (txt: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/g;
+
+  const parts = txt.split(urlRegex);
+
+  return parts.map((part: string, index: number) => {
+    if (part.match(urlRegex)) {
+      const href = part.startsWith("http") ? part : `https://${part}`;
+
+      return (
+        <a
+          key={index}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-violet-300/60 hover:text-violet-300/70 underline decoration-violet-200/50 hover:decoration-violet-200 transition-all wrap-break-word"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+};
 
 export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } = {}) {
   const navigate = useNavigate();
@@ -69,6 +98,8 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
   const [invoiceCopied, setInvoiceCopied] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isPaymentConfirmed, setIsPaymentConfirmed] = useState(false);
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const loadBoard = async () => {
@@ -342,7 +373,10 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
           </ul>
 
           <div className="bg-red-500/10 border border-red-500/30 p-3 mt-4">
-            <p className="text-red-400 text-sm font-bold mb-2">⚠️ Important Warning:</p>
+            <p className="text-red-400 text-sm font-bold mb-2 flex items-center justify-start gap-2">
+              <IoWarning />
+              Important Warning:
+            </p>
             <p className="text-red-400 text-sm">
               Previous messages sent to the anonymous board will NOT be restored. Only new zaps sent
               after the upgrade will appear. This board will use a new creator identity (your Nostr
@@ -414,8 +448,8 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
           {/* Payment Status */}
           {isWaitingPayment && (
             <div className="mb-4 p-3 bg-yellow-text/10 border border-yellow-text/30">
-              <p className="text-yellow-text/90 text-center text-sm animate-pulse">
-                ⚡ Waiting for payment...
+              <p className="text-yellow-text/90 text-center text-sm animate-pulse flex items-center justify-center gap-2">
+                <BsLightning /> Waiting for payment...
               </p>
             </div>
           )}
@@ -423,15 +457,17 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
           {/* Payment Success */}
           {isPaymentConfirmed && (
             <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30">
-              <p className="text-green-400 text-center text-sm font-bold">✓ Payment Confirmed!</p>
+              <p className="text-green-400 text-center text-sm font-bold flex items-center justify-center gap-2">
+                <GiConfirmed /> Payment Confirmed!
+              </p>
             </div>
           )}
 
           {/* Upgrading Status */}
           {isUpgrading && (
             <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30">
-              <p className="text-blue-400 text-center text-sm animate-pulse">
-                🔄 Upgrading board...
+              <p className="text-blue-400 text-center text-sm animate-pulse flex items-center justify-center gap-2">
+                <GiArmorUpgrade /> Upgrading board...
               </p>
             </div>
           )}
@@ -457,70 +493,6 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
   return (
     <div className="min-h-screen bg-blackish p-6 lg:p-10">
       <div className="w-full mx-auto space-y-6">
-        {/* Board name + logo + volume + settings */}
-        <div className="card-style p-4 flex sm:flex-row flex-col justify-between items-center gap-4">
-          <h2 className="text-4xl lg:max-proj:text-4xl proj:text-8xl text-center w-full font-semibold text-yellow-300 flex items-center justify-center gap-2">
-            <div className="flex items-center justify-center gap-2">
-              {/* Logo */}
-              {boardConfig.logoUrl && (
-                <img
-                  src={boardConfig.logoUrl}
-                  alt={`${boardConfig.boardName} logo`}
-                  className="w-20 h-16 proj:w-28 proj:h-24 object-contain rounded-lg bg-white/10"
-                  onError={e => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              )}
-              <span className="animate-pulse">{boardConfig.boardName}</span>
-              {boardConfig.isExplorable && (
-                <RiVerifiedBadgeFill className="text-xl proj:text-7xl text-violet-300" />
-              )}
-            </div>
-          </h2>
-
-          <div className="flex items-center gap-2">
-            {boardConfig.isExplorable && (
-              <button
-                onClick={() => navigate(`/settings/${boardId}`)}
-                className="text-gray-300 hover:text-yellow-text/90 opacity-90 hover:opacity-100 transition-all duration-300"
-                title="Board Settings"
-              >
-                <MdSettings size={24} />
-              </button>
-            )}
-
-            <button
-              onClick={() => {
-                const url = `${window.location.origin}/board/${boardId}`;
-                navigator.clipboard.writeText(url);
-              }}
-              className="text-gray-300 hover:text-gray-200 opacity-90 hover:opacity-100 transition-all duration-300"
-              title="Copy board URL"
-            >
-              <FaLink
-                size={20}
-                className="text-gray-400 hover:text-yellow-400/60 ease-in-out transition-all duration-300"
-              />
-            </button>
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className="text-violet-300 hover:text-violet-200 opacity-65"
-            >
-              {isMuted ? <FaVolumeMute size={24} /> : <FaVolumeUp size={24} />}
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={volume}
-              onChange={e => setVolume(parseFloat(e.target.value))}
-              className="w-32 accent-violet-400 opacity-60"
-            />
-          </div>
-        </div>
-
         {/* Show "Make Board Explorable" button for non-explorable boards */}
         {canUpgrade && (
           <div className="card-style p-2 border-2 border-yellow-text/20">
@@ -570,7 +542,148 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          {/* left column */}
           <div className="lg:col-span-2 flex flex-col gap-3 sm:gap-4 md:gap-5">
+            {/* Board name + logo + volume + settings */}
+            <div className="card-style p-4 flex sm:flex-row flex-col justify-between items-center gap-4 relative min-h-20 sm:min-h-0">
+              {/* Hamburger Menu - Left Side */}
+              <div className="absolute left-2 sm:left-4 top-4 sm:top-1/2 sm:-translate-y-1/2 z-50 ">
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="text-gray-300 hover:text-yellow-text transition-all duration-300 p-2 hover:bg-gray-800/30 rounded-lg active:scale-95 cursor-pointer"
+                  title="Menu"
+                  aria-label="Toggle menu"
+                >
+                  <div className="relative w-6 h-6 sm:max-proj:w-7 sm:max-proj:h-7 proj:w-12 proj:h-12">
+                    {/* Hamburger Icon */}
+                    <HiMenu
+                      size={24}
+                      className={`absolute inset-0 sm:w-7 sm:h-7 proj:text-5xl transition-all duration-300 ${
+                        isMenuOpen
+                          ? "opacity-0 rotate-180 scale-50"
+                          : "opacity-100 rotate-0 scale-100"
+                      }`}
+                    />
+                    {/* Close Icon */}
+                    <HiX
+                      size={24}
+                      className={`absolute inset-0 sm:w-7 sm:h-7 proj:text-5xl transition-all duration-300  ${
+                        isMenuOpen
+                          ? "opacity-100 rotate-0 scale-100"
+                          : "opacity-0 -rotate-180 scale-50"
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isMenuOpen && (
+                  <>
+                    {/* Backdrop to close menu */}
+                    <div
+                      className="fixed inset-0 cursor-pointer z-40 animate-fadeIn"
+                      onClick={() => setIsMenuOpen(false)}
+                      aria-hidden="true"
+                    />
+
+                    {/* Menu Content */}
+                    <div className="absolute left-0 top-full mt-2 bg-blackish backdrop-blur-sm border border-border-purple rounded-lg shadow-2xl p-3 sm:p-4 z-50 w-60 sm:min-w-[280px] animate-slideDown">
+                      <div className="space-y-3 sm:space-y-4">
+                        {/* Volume Controls */}
+                        <div className="space-y-2">
+                          <p className="text-gray-400 text-xs sm:text-sm font-semibold uppercase tracking-wide">
+                            Volume
+                          </p>
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <button
+                              onClick={() => setIsMuted(!isMuted)}
+                              className="text-violet-300 hover:text-violet-200 transition-all hover:scale-110 active:scale-95"
+                              aria-label={isMuted ? "Unmute" : "Mute"}
+                            >
+                              {isMuted ? (
+                                <FaVolumeMute size={20} className="sm:w-6 sm:h-6" />
+                              ) : (
+                                <FaVolumeUp size={20} className="sm:w-6 sm:h-6" />
+                              )}
+                            </button>
+                            <input
+                              type="range"
+                              min="0"
+                              max="1"
+                              step="0.05"
+                              value={volume}
+                              onChange={e => setVolume(parseFloat(e.target.value))}
+                              className="flex-1 accent-violet-400 cursor-pointer"
+                              aria-label="Volume slider"
+                            />
+                            <span className="text-gray-400 text-xs sm:text-sm min-w-[2.5ch] sm:min-w-[3ch] font-mono">
+                              {Math.round(volume * 100)}%
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-border-purple" />
+
+                        {/* Settings Button */}
+                        {boardConfig.isExplorable && (
+                          <button
+                            onClick={() => {
+                              navigate(`/settings/${boardId}`);
+                              setIsMenuOpen(false);
+                            }}
+                            className="w-full flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-gray-300 hover:text-yellow-text hover:bg-card-bg p-2 sm:p-2.5 rounded-lg transition-all duration-200 active:scale-98 cursor-pointer"
+                          >
+                            <MdSettings size={20} className="sm:w-6 sm:h-6 shrink-0" />
+                            <span>Board Settings</span>
+                          </button>
+                        )}
+
+                        {/* Copy Link Button */}
+                        <button
+                          onClick={() => {
+                            const url = `${window.location.origin}/board/${boardId}`;
+                            navigator.clipboard.writeText(url);
+                            setIsMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 sm:gap-3 text-sm sm:text-base text-gray-300 hover:text-yellow-text hover:bg-card-bg p-2 sm:p-2.5 rounded-lg transition-all duration-200 active:scale-98 cursor-pointer"
+                        >
+                          <FaLink size={18} className="sm:w-5 sm:h-5 shrink-0" />
+                          <span>Copy Board URL</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Board Name - Centered with proper spacing */}
+              <div className="w-full flex items-center justify-center px-10 sm:px-0 sm:max-2xl:ml-20">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:max-proj:text-4xl proj:text-8xl text-center font-semibold text-yellow-300">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                    {/* Logo */}
+                    {boardConfig.logoUrl && (
+                      <img
+                        src={boardConfig.logoUrl}
+                        alt={`${boardConfig.boardName} logo`}
+                        className="w-12 h-10 sm:w-16 sm:h-14 md:w-20 md:h-16 proj:w-28 proj:h-24 object-contain rounded-lg bg-white/10"
+                        onError={e => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    )}
+
+                    <span className="animate-pulse wrap-break-words text-center leading-tight proj:text-6xl flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                      {boardConfig.boardName}
+                      {boardConfig.isExplorable && (
+                        <RiVerifiedBadgeFill className="text-base sm:max-md:text-lg md:max-proj:text-xl proj:text-5xl text-violet-300 inline-block ml-1" />
+                      )}
+                    </span>
+                  </div>
+                </h2>
+              </div>
+            </div>
+
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4">
               <div className="card-style flex flex-col gap-2 p-4 text-center font-semibold text-yellow-500">
@@ -620,8 +733,8 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                         </div>
                       </div>
                     </div>
-                    <p className="text-slate-400/90 text-xl proj:text-4xl pt-4 max-w-[1600px] whitespace-normal break-all">
-                      {msg.content}
+                    <p className="text-slate-400/90 text-xl proj:text-4xl pt-4 max-w-[1600px] whitespace-normal wrap-break-word">
+                      {renderMessageWithLinks(msg.content)}
                     </p>
                   </div>
                 ))
@@ -632,7 +745,6 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
           <div className="space-y-6">
             {/* QR Section */}
             <div className="bg-card-bg p-6 shadow-lg text-center">
-              <h3 className="font-bold text-xl proj:text-4xl text-violet-300 mb-4">Scan to Zap</h3>
               <a
                 href={`${window.location.origin}/pay/${boardId}`}
                 target="_blank"
@@ -640,16 +752,13 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
               >
                 <QRCodeSVG
                   value={`${window.location.origin}/pay/${boardId}`}
-                  size={window.innerWidth < 640 ? 180 : window.innerWidth < 2000 ? 290 : 1000}
+                  size={window.innerWidth < 640 ? 180 : window.innerWidth < 2000 ? 290 : 600}
                   level="M"
                   bgColor="#ffffff"
                   fgColor="#000000"
                   className="mx-auto border-5 border-white"
                 />
               </a>
-              <div className="text-yellow-300 mt-3 proj:text-3xl">
-                Min: {boardConfig.minZapAmount} sats
-              </div>
             </div>
             {/* Leaderboard */}
             <div className="bg-card-bg p-6 rounded-lg">
@@ -693,9 +802,9 @@ export default function BoardDisplay({ boardIdProp }: { boardIdProp?: string } =
                           <div>
                             {m.content && (
                               <div
-                                className={`text-2xl proj:text-3xl ${rankColor.light} mt-1 w-full text-wrap break-all`}
+                                className={`text-2xl proj:text-3xl ${rankColor.light} mt-1 w-full text-wrap wrap-break-word`}
                               >
-                                {m.content}
+                                {renderMessageWithLinks(m.content)}
                               </div>
                             )}
                           </div>

@@ -78,6 +78,28 @@ body {
     transform: translateY(0);
   }
 }
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s ease-out;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.active\:scale-98:active {
+  transform: scale(0.98);
+}
 
 /* loading css */
 .loader {

@@ -172,13 +172,19 @@ function Pricing() {
                     className="flex items-start gap-3 text-sm sm:text-base md:text-lg proj:text-2xl"
                   >
                     <BsCheck className="text-yellow-text shrink-0 text-xl sm:text-2xl proj:text-4xl mt-1" />
-                    <span className="text-gray-300">
+                    <span className="text-gray-300 flex items-center gap-1">
                       {feature.name}
                       {feature.premium && !feature.basic && feature.icon}
                       {feature.note && (
-                        <div className="text-xs sm:text-sm text-gray-600/70 mt-1">
-                          {feature.note}
-                        </div>
+                        <span className="relative group/tooltip inline-flex items-center">
+                          <span className="text-yellow-text/60 hover:text-yellow-text cursor-help transition-colors text-md sm:text-2xl  font-bold">
+                            *
+                          </span>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-xs px-3 py-2 text-xs sm:text-sm proj:text-base text-white bg-gray-800 rounded shadow-lg opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-10">
+                            {feature.note}
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></span>
+                          </span>
+                        </span>
                       )}
                     </span>
                   </div>
